@@ -3,3 +3,9 @@ node_modules/
 
 # Environment variables
 .env
+
+
+# Config & metadata files (tidak ingin di-commit)
+package.json
+package-lock.json
+nodemon.json
