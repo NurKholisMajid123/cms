@@ -1,0 +1,141 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          <h1 class="display-4 fw-bold text-success mb-2">Galeri</h1>
+          <p class="lead text-muted">Dokumentasi kegiatan dan momen berharga HMI</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter -->
+    <section class="py-4 bg-light">
+      <div class="container">
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+          <a href="/galeri" class="btn btn-${!selectedType ? 'success' : 'outline-success'}">
+            <i class="bi bi-grid me-2"></i>Semua
+          </a>
+          <a href="/galeri?type=photo" class="btn btn-${selectedType === 'photo' ? 'success' : 'outline-success'}">
+            <i class="bi bi-images me-2"></i>Foto
+          </a>
+          <a href="/galeri?type=video" class="btn btn-${selectedType === 'video' ? 'success' : 'outline-success'}">
+            <i class="bi bi-play-circle me-2"></i>Video
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Grid -->
+    <section class="py-5">
+      <div class="container">
+        ${galleries && galleries.length > 0 ? `
+          <div class="row g-4">
+            ${galleries.map(gallery => `
+              <div class="col-lg-4 col-md-6">
+                <div class="card border-0 shadow-sm h-100 hover-lift">
+                  ${gallery.coverImage ? `
+                    <div class="position-relative">
+                      <img src="${gallery.coverImage.url}" 
+                           class="card-img-top" 
+                           alt="${gallery.title}"
+                           style="height: 250px; object-fit: cover;">
+                      <div class="position-absolute top-0 end-0 m-3">
+                        <span class="badge bg-${gallery.type === 'photo' ? 'primary' : 'danger'}">
+                          <i class="bi bi-${gallery.type === 'photo' ? 'images' : 'play-circle'} me-1"></i>
+                          ${gallery.type === 'photo' ? 'Foto' : 'Video'}
+                        </span>
+                      </div>
+                      ${gallery.items && gallery.items.length > 0 ? `
+                        <div class="position-absolute bottom-0 start-0 m-3">
+                          <span class="badge bg-dark bg-opacity-75">
+                            <i class="bi bi-collection me-1"></i>
+                            ${gallery.items.length} item
+                          </span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  ` : `
+                    <div class="bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center" 
+                         style="height: 250px;">
+                      <i class="bi bi-image text-secondary" style="font-size: 4rem;"></i>
+                    </div>
+                  `}
+                  <div class="card-body">
+                    <h5 class="card-title mb-2">
+                      <a href="/galeri/${gallery.slug}" class="text-decoration-none text-dark stretched-link">
+                        ${gallery.title}
+                      </a>
+                    </h5>
+                    ${gallery.description ? `
+                      <p class="card-text text-muted small mb-3">${gallery.description.substring(0, 100)}${gallery.description.length > 100 ? '...' : ''}</p>
+                    ` : ''}
+                    ${gallery.eventDate ? `
+                      <div class="d-flex align-items-center text-muted small">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        <span>${new Date(gallery.eventDate).toLocaleDateString('id-ID', { 
+                          day: 'numeric', 
+                          month: 'long', 
+                          year: 'numeric' 
+                        })}</span>
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Pagination -->
+          ${pagination && pagination.totalPages > 1 ? `
+            <nav aria-label="Page navigation" class="mt-5">
+              <ul class="pagination justify-content-center">
+                <li class="page-item ${!pagination.hasPrevPage ? 'disabled' : ''}">
+                  <a class="page-link" 
+                     href="/galeri?page=${pagination.page - 1}${selectedType ? '&type=' + selectedType : ''}">
+                    <i class="bi bi-chevron-left"></i>
+                  </a>
+                </li>
+                
+                ${Array.from({length: pagination.totalPages}, (_, i) => i + 1).map(pageNum => `
+                  <li class="page-item ${pageNum === pagination.page ? 'active' : ''}">
+                    <a class="page-link" 
+                       href="/galeri?page=${pageNum}${selectedType ? '&type=' + selectedType : ''}">
+                      ${pageNum}
+                    </a>
+                  </li>
+                `).join('')}
+                
+                <li class="page-item ${!pagination.hasNextPage ? 'disabled' : ''}">
+                  <a class="page-link" 
+                     href="/galeri?page=${pagination.page + 1}${selectedType ? '&type=' + selectedType : ''}">
+                    <i class="bi bi-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          ` : ''}
+        ` : `
+          <div class="text-center py-5">
+            <i class="bi bi-images text-muted" style="font-size: 5rem;"></i>
+            <h4 class="mt-3 text-muted">Belum ada galeri tersedia</h4>
+            <p class="text-muted">Pantau terus untuk dokumentasi kegiatan terbaru</p>
+          </div>
+        `}
+      </div>
+    </section>
+
+    <style>
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    </style>
+  `
+}) %>

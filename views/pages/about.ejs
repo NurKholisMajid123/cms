@@ -1,0 +1,175 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          <h1 class="display-4 fw-bold text-success mb-2">Tentang HMI</h1>
+          <p class="lead text-muted">Mengenal lebih dekat Himpunan Mahasiswa Islam</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- History Section -->
+    ${about && about.history ? `
+    <section class="py-5" id="sejarah">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            ${settings.logo ? `
+            <img src="${settings.logo.url}" alt="Logo HMI" class="img-fluid rounded shadow">
+            ` : ''}
+          </div>
+          <div class="col-lg-6">
+            <h2 class="fw-bold mb-4">Sejarah Organisasi</h2>
+            <div class="text-muted">
+              ${about.history}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Vision & Mission -->
+    ${about && (about.vision || about.mission) ? `
+    <section class="py-5 bg-light" id="visi-misi">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">Visi & Misi</h2>
+          <p class="text-muted">Arah dan tujuan organisasi kami</p>
+        </div>
+        <div class="row g-4">
+          ${about.vision ? `
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body p-4">
+                <div class="text-center mb-3">
+                  <div class="bg-success bg-opacity-10 rounded-circle p-4 d-inline-block">
+                    <i class="bi bi-eye text-success" style="font-size: 3rem;"></i>
+                  </div>
+                </div>
+                <h3 class="text-center fw-bold mb-3">Visi</h3>
+                <p class="text-muted text-center">${about.vision}</p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+          ${about.mission ? `
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body p-4">
+                <div class="text-center mb-3">
+                  <div class="bg-primary bg-opacity-10 rounded-circle p-4 d-inline-block">
+                    <i class="bi bi-flag text-primary" style="font-size: 3rem;"></i>
+                  </div>
+                </div>
+                <h3 class="text-center fw-bold mb-3">Misi</h3>
+                <p class="text-muted text-center">${about.mission}</p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Values -->
+    ${about && about.values && about.values.length > 0 ? `
+    <section class="py-5">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">Nilai-Nilai Organisasi</h2>
+          <p class="text-muted">Prinsip yang kami pegang teguh</p>
+        </div>
+        <div class="row g-4">
+          ${about.values.map((item, index) => `
+            <div class="col-lg-4 col-md-6">
+              <div class="card border-0 shadow-sm h-100 hover-lift">
+                <div class="card-body p-4 text-center">
+                  <div class="bg-success bg-opacity-10 rounded-circle p-3 d-inline-block mb-3">
+                    <i class="bi bi-star-fill text-success fs-3"></i>
+                  </div>
+                  <h5 class="fw-bold mb-3">${item.value}</h5>
+                  <p class="text-muted">${item.description}</p>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Achievements -->
+    ${about && about.achievements && about.achievements.length > 0 ? `
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="text-center mb-5">
+          <h2 class="fw-bold">Prestasi & Pencapaian</h2>
+          <p class="text-muted">Perjalanan yang telah kami lalui</p>
+        </div>
+        <div class="row">
+          <div class="col-lg-10 mx-auto">
+            <div class="timeline">
+              ${about.achievements.map((achievement, index) => `
+                <div class="timeline-item mb-4">
+                  <div class="card border-0 shadow-sm">
+                    <div class="card-body p-4">
+                      <div class="d-flex align-items-start">
+                        <div class="badge bg-success rounded-pill px-3 py-2 me-3">
+                          ${achievement.year}
+                        </div>
+                        <div class="flex-grow-1">
+                          <h5 class="fw-bold mb-2">${achievement.title}</h5>
+                          <p class="text-muted mb-0">${achievement.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Contact CTA -->
+    <section class="py-5 bg-success text-white">
+      <div class="container text-center">
+        <h2 class="fw-bold mb-3">Ingin Tahu Lebih Banyak?</h2>
+        <p class="lead mb-4">Hubungi kami untuk informasi lebih lanjut tentang HMI</p>
+        <a href="/kontak" class="btn btn-light btn-lg">
+          <i class="bi bi-envelope me-2"></i>Hubungi Kami
+        </a>
+      </div>
+    </section>
+
+    <style>
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    .timeline-item {
+      position: relative;
+    }
+    .timeline-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 50px;
+      top: 70px;
+      width: 2px;
+      height: calc(100% - 20px);
+      background: #dee2e6;
+    }
+    </style>
+  `
+}) %>

@@ -1,0 +1,200 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          <h1 class="display-4 fw-bold text-success mb-2">Hubungi Kami</h1>
+          <p class="lead text-muted">Kami siap menjawab pertanyaan Anda</p>
+        </div>
+      </div>
+    </section>
+
+    ${success ? `
+      <div class="alert alert-success alert-dismissible fade show m-4" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Terkirim!</strong> Pesan Anda telah berhasil dikirim. Kami akan segera menghubungi Anda.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    ` : ''}
+
+    <!-- Contact Section -->
+    <section class="py-5">
+      <div class="container">
+        <div class="row g-5">
+          <!-- Contact Info -->
+          <div class="col-lg-4">
+            <h3 class="fw-bold mb-4">Informasi Kontak</h3>
+            
+            ${settings.contactInfo ? `
+              ${settings.contactInfo.address ? `
+                <div class="card border-0 shadow-sm mb-3">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start">
+                      <div class="bg-success bg-opacity-10 rounded p-3 me-3">
+                        <i class="bi bi-geo-alt text-success fs-4"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-2">Alamat</h6>
+                        <p class="text-muted mb-0">${settings.contactInfo.address}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${settings.contactInfo.phone ? `
+                <div class="card border-0 shadow-sm mb-3">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start">
+                      <div class="bg-success bg-opacity-10 rounded p-3 me-3">
+                        <i class="bi bi-telephone text-success fs-4"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-2">Telepon</h6>
+                        <p class="text-muted mb-0">
+                          <a href="tel:${settings.contactInfo.phone}" class="text-decoration-none text-dark">
+                            ${settings.contactInfo.phone}
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${settings.contactInfo.email ? `
+                <div class="card border-0 shadow-sm mb-3">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start">
+                      <div class="bg-success bg-opacity-10 rounded p-3 me-3">
+                        <i class="bi bi-envelope text-success fs-4"></i>
+                      </div>
+                      <div>
+                        <h6 class="fw-bold mb-2">Email</h6>
+                        <p class="text-muted mb-0">
+                          <a href="mailto:${settings.contactInfo.email}" class="text-decoration-none text-dark">
+                            ${settings.contactInfo.email}
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+            ` : ''}
+
+            <!-- Social Media -->
+            ${settings.socialMedia && (settings.socialMedia.facebook || settings.socialMedia.instagram || settings.socialMedia.twitter || settings.socialMedia.youtube) ? `
+              <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                  <h6 class="fw-bold mb-3">Ikuti Kami</h6>
+                  <div class="d-flex flex-wrap gap-2">
+                    ${settings.socialMedia.facebook ? `
+                      <a href="${settings.socialMedia.facebook}" 
+                         target="_blank" 
+                         class="btn btn-light btn-sm">
+                        <i class="bi bi-facebook"></i>
+                      </a>
+                    ` : ''}
+                    ${settings.socialMedia.instagram ? `
+                      <a href="${settings.socialMedia.instagram}" 
+                         target="_blank" 
+                         class="btn btn-light btn-sm">
+                        <i class="bi bi-instagram"></i>
+                      </a>
+                    ` : ''}
+                    ${settings.socialMedia.twitter ? `
+                      <a href="${settings.socialMedia.twitter}" 
+                         target="_blank" 
+                         class="btn btn-light btn-sm">
+                        <i class="bi bi-twitter"></i>
+                      </a>
+                    ` : ''}
+                    ${settings.socialMedia.youtube ? `
+                      <a href="${settings.socialMedia.youtube}" 
+                         target="_blank" 
+                         class="btn btn-light btn-sm">
+                        <i class="bi bi-youtube"></i>
+                      </a>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Contact Form -->
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h3 class="fw-bold mb-4">Kirim Pesan</h3>
+                <form action="/kontak" method="POST">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label for="name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                      <input type="text" 
+                             class="form-control form-control-lg" 
+                             id="name" 
+                             name="name" 
+                             required 
+                             placeholder="Masukkan nama Anda">
+                    </div>
+                    <div class="col-md-6">
+                      <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                      <input type="email" 
+                             class="form-control form-control-lg" 
+                             id="email" 
+                             name="email" 
+                             required 
+                             placeholder="nama@email.com">
+                    </div>
+                    <div class="col-12">
+                      <label for="subject" class="form-label">Subjek</label>
+                      <input type="text" 
+                             class="form-control form-control-lg" 
+                             id="subject" 
+                             name="subject" 
+                             placeholder="Subjek pesan">
+                    </div>
+                    <div class="col-12">
+                      <label for="message" class="form-label">Pesan <span class="text-danger">*</span></label>
+                      <textarea class="form-control form-control-lg" 
+                                id="message" 
+                                name="message" 
+                                rows="6" 
+                                required 
+                                placeholder="Tulis pesan Anda di sini..."></textarea>
+                    </div>
+                    <div class="col-12">
+                      <button type="submit" class="btn btn-success btn-lg px-5">
+                        <i class="bi bi-send me-2"></i>Kirim Pesan
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map Section -->
+    ${settings.contactInfo && settings.contactInfo.mapUrl ? `
+      <section class="py-5 bg-light">
+        <div class="container">
+          <h3 class="fw-bold text-center mb-4">Lokasi Kami</h3>
+          <div class="ratio ratio-21x9">
+            <iframe src="${settings.contactInfo.mapUrl}" 
+                    allowfullscreen 
+                    loading="lazy" 
+                    class="rounded shadow-sm"></iframe>
+          </div>
+        </div>
+      </section>
+    ` : ''}
+  `
+}) %>

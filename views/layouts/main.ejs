@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> - <%= settings.siteName || 'HMI' %></title>
+  <meta name="description" content="<%= settings.description || 'Website Himpunan Mahasiswa Islam' %>">
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/css/style.css">
+  
+  <% if (settings.favicon) { %>
+  <link rel="icon" href="<%= settings.favicon.url %>" type="image/x-icon">
+  <% } %>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <% if (settings.logo) { %>
+        <img src="<%= settings.logo.url %>" alt="Logo HMI" height="50" class="me-2">
+        <% } %>
+        <div>
+          <div class="fw-bold text-success"><%= settings.siteName || 'HMI' %></div>
+          <% if (settings.tagline) { %>
+          <small class="text-muted d-none d-md-block"><%= settings.tagline %></small>
+          <% } %>
+        </div>
+      </a>
+      
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link <%= title === 'Beranda' ? 'active' : '' %>" href="/">Beranda</a>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle <%= (title === 'Tentang HMI' || title === 'Struktur Organisasi') ? 'active' : '' %>" href="#" data-bs-toggle="dropdown">
+              Tentang
+            </a>
+            <ul class="dropdown-menu">
+              <li><a class="dropdown-item <%= title === 'Tentang HMI' ? 'active' : '' %>" href="/tentang">Profil HMI</a></li>
+              <li><a class="dropdown-item <%= title === 'Struktur Organisasi' ? 'active' : '' %>" href="/struktur">Struktur Organisasi</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="/tentang#sejarah">Sejarah</a></li>
+              <li><a class="dropdown-item" href="/tentang#visi-misi">Visi & Misi</a></li>
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= title.includes('Berita') ? 'active' : '' %>" href="/berita">Berita</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= title.includes('Galeri') ? 'active' : '' %>" href="/galeri">Galeri</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= title === 'Dokumen' ? 'active' : '' %>" href="/dokumen">Dokumen</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= title === 'Kontak' ? 'active' : '' %>" href="/kontak">Kontak</a>
+          </li>
+        </ul>
+        
+        <!-- Search -->
+        <form action="/cari" method="GET" class="d-flex ms-3">
+          <input class="form-control form-control-sm" type="search" name="q" placeholder="Cari..." style="width: 150px;">
+        </form>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <%- body %>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white pt-5 pb-3 mt-5">
+    <div class="container">
+      <div class="row">
+        <!-- About -->
+        <div class="col-lg-4 mb-4">
+          <h5 class="text-success mb-3">
+            <% if (settings.logo) { %>
+            <img src="<%= settings.logo.url %>" alt="Logo" height="40" class="me-2">
+            <% } %>
+            <%= settings.siteName || 'HMI' %>
+          </h5>
+          <p class="text-muted"><%= settings.description || 'Himpunan Mahasiswa Islam' %></p>
+        </div>
+        
+        <!-- Quick Links -->
+        <div class="col-lg-2 col-md-6 mb-4">
+          <h6 class="text-success mb-3">Menu</h6>
+          <ul class="list-unstyled">
+            <li class="mb-2"><a href="/" class="text-white-50 text-decoration-none">Beranda</a></li>
+            <li class="mb-2"><a href="/tentang" class="text-white-50 text-decoration-none">Tentang</a></li>
+            <li class="mb-2"><a href="/berita" class="text-white-50 text-decoration-none">Berita</a></li>
+            <li class="mb-2"><a href="/galeri" class="text-white-50 text-decoration-none">Galeri</a></li>
+          </ul>
+        </div>
+        
+        <!-- Contact Info -->
+        <div class="col-lg-3 col-md-6 mb-4">
+          <h6 class="text-success mb-3">Kontak</h6>
+          <% if (settings.contactInfo) { %>
+          <ul class="list-unstyled text-muted">
+            <% if (settings.contactInfo.email) { %>
+            <li class="mb-2">
+              <i class="bi bi-envelope me-2"></i>
+              <%= settings.contactInfo.email %>
+            </li>
+            <% } %>
+            <% if (settings.contactInfo.phone) { %>
+            <li class="mb-2">
+              <i class="bi bi-phone me-2"></i>
+              <%= settings.contactInfo.phone %>
+            </li>
+            <% } %>
+            <% if (settings.contactInfo.address) { %>
+            <li class="mb-2">
+              <i class="bi bi-geo-alt me-2"></i>
+              <%= settings.contactInfo.address %>
+            </li>
+            <% } %>
+          </ul>
+          <% } %>
+        </div>
+        
+        <!-- Social Media -->
+        <div class="col-lg-3 mb-4">
+          <h6 class="text-success mb-3">Media Sosial</h6>
+          <div class="d-flex gap-2">
+            <% if (settings.socialMedia) { %>
+              <% if (settings.socialMedia.facebook) { %>
+              <a href="<%= settings.socialMedia.facebook %>" class="btn btn-outline-light btn-sm" target="_blank">
+                <i class="bi bi-facebook"></i>
+              </a>
+              <% } %>
+              <% if (settings.socialMedia.instagram) { %>
+              <a href="<%= settings.socialMedia.instagram %>" class="btn btn-outline-light btn-sm" target="_blank">
+                <i class="bi bi-instagram"></i>
+              </a>
+              <% } %>
+              <% if (settings.socialMedia.twitter) { %>
+              <a href="<%= settings.socialMedia.twitter %>" class="btn btn-outline-light btn-sm" target="_blank">
+                <i class="bi bi-twitter"></i>
+              </a>
+              <% } %>
+              <% if (settings.socialMedia.youtube) { %>
+              <a href="<%= settings.socialMedia.youtube %>" class="btn btn-outline-light btn-sm" target="_blank">
+                <i class="bi bi-youtube"></i>
+              </a>
+              <% } %>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      
+      <hr class="border-secondary">
+      
+      <div class="row">
+        <div class="col-md-6 text-center text-md-start">
+          <p class="mb-0 text-muted small">
+            &copy; <%= new Date().getFullYear() %> <%= settings.siteName || 'HMI' %>. All rights reserved.
+          </p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <p class="mb-0 text-muted small">
+            Powered by <a href="/admin" class="text-success text-decoration-none">Payload CMS</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Custom JS -->
+  <script src="/js/main.js"></script>
+</body>
+</html>

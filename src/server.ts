@@ -8,11 +8,16 @@ config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// View Engine Setup
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, '../views'));
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, '../public')));
 
-// CORS (jika dibutuhkan untuk frontend terpisah)
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -23,8 +28,38 @@ app.use((req, res, next) => {
   next();
 });
 
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+// Activity Logger Helper
+async function logActivity(action: string, userId: string, collection?: string, documentId?: string, details?: string, ipAddress?: string) {
+  try {
+    await payload.create({
+      collection: 'activity-logs',
+      data: {
+        action,
+        user: userId,
+        collection,
+        documentId,
+        details,
+        ipAddress,
+      },
+    });
+  } catch (error) {
+    payload.logger.error('Failed to log activity:', error);
+  }
+}
+
+// Load common data for all pages
+async function loadCommonData() {
+  return await Promise.all([
+    payload.findGlobal({ slug: 'settings', depth: 2 }),
+    payload.findGlobal({ slug: 'navigation', depth: 2 }),
+  ]);
+}
+
 const start = async () => {
-  // Initialize Payload
   await payload.init({
     secret: process.env.PAYLOAD_SECRET || 'your-secret-key-here',
     express: app,
@@ -35,175 +70,540 @@ const start = async () => {
   });
 
   // ============================================
-  // PUBLIC FRONTEND API ROUTES
+  // FRONTEND ROUTES
   // ============================================
 
-  // ============================================
-  // 1. ORGANIZATION STRUCTURE (Struktur Organisasi)
-  // ============================================
-
-  // Get active period
-  app.get('/api/public/period/active', async (req, res) => {
+  // Homepage
+  app.get('/', async (req, res) => {
     try {
-      const period = await payload.find({
-        collection: 'periods',
-        where: { isActive: { equals: true } },
-        limit: 1,
+      const [settings, navigation, about, latestPosts, activePeriod, stats] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.findGlobal({ slug: 'about', depth: 2 }),
+        payload.find({
+          collection: 'posts',
+          where: { status: { equals: 'published' } },
+          limit: 6,
+          sort: '-publishedDate',
+          depth: 2,
+        }),
+        payload.find({
+          collection: 'periods',
+          where: { isActive: { equals: true } },
+          limit: 1,
+        }),
+        Promise.all([
+          payload.find({ collection: 'members', where: { isActive: { equals: true } }, limit: 0 }),
+          payload.find({ collection: 'posts', where: { status: { equals: 'published' } }, limit: 0 }),
+          payload.find({ collection: 'galleries', limit: 0 }),
+        ]),
+      ]);
+
+      res.render('pages/home', {
+        title: 'Beranda',
+        settings,
+        navigation,
+        about,
+        latestPosts: latestPosts.docs,
+        activePeriod: activePeriod.docs[0] || null,
+        stats: {
+          members: stats[0].totalDocs,
+          posts: stats[1].totalDocs,
+          galleries: stats[2].totalDocs,
+        },
       });
-
-      if (period.docs.length === 0) {
-        return res.status(404).json({ error: 'No active period found' });
-      }
-
-      res.json(period.docs[0]);
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching active period' });
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan saat memuat halaman',
+        settings: {},
+        navigation: {},
+      });
     }
   });
 
-  // Get all periods
-  app.get('/api/public/periods', async (req, res) => {
+  // Tentang Kami
+  app.get('/tentang', async (req, res) => {
     try {
-      const periods = await payload.find({
-        collection: 'periods',
-        sort: '-startDate',
+      const [settings, navigation, about] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.findGlobal({ slug: 'about', depth: 2 }),
+      ]);
+
+      res.render('pages/about', {
+        title: 'Tentang Kami',
+        settings,
+        navigation,
+        about,
       });
-      res.json(periods);
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching periods' });
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
     }
   });
 
-  // Get organization structure by period
-  app.get('/api/public/structure/:periodId?', async (req, res) => {
+  // Struktur Organisasi
+  app.get('/struktur', async (req, res) => {
     try {
-      let periodId = req.params.periodId;
+      const periodId = req.query.period ? String(req.query.period) : undefined;
+      const [settings, navigation, periods] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ collection: 'periods', sort: '-startDate' }),
+      ]);
 
-      // If no period specified, get active period
-      if (!periodId) {
+      let selectedPeriodId: string | undefined = periodId;
+
+      if (!selectedPeriodId) {
         const activePeriod = await payload.find({
           collection: 'periods',
           where: { isActive: { equals: true } },
           limit: 1,
         });
-
-        if (activePeriod.docs.length === 0) {
-          return res.status(404).json({ error: 'No active period found' });
-        }
-        periodId = activePeriod.docs[0].id;
+        selectedPeriodId = activePeriod.docs[0]?.id ? String(activePeriod.docs[0].id) : undefined;
       }
 
-      // Get positions for this period
-      const positions = await payload.find({
-        collection: 'positions',
-        where: {
-          period: { equals: periodId },
-        },
-        sort: 'order',
-        depth: 2,
-      });
+      const [positions, members] = await Promise.all([
+        payload.find({
+          collection: 'positions',
+          where: { period: { equals: selectedPeriodId } },
+          sort: 'order',
+          depth: 2,
+        }),
+        payload.find({
+          collection: 'members',
+          where: {
+            period: { equals: selectedPeriodId },
+            isActive: { equals: true },
+          },
+          depth: 2,
+        }),
+      ]);
 
-      // Get members for this period
-      const members = await payload.find({
-        collection: 'members',
-        where: {
-          period: { equals: periodId },
-          isActive: { equals: true },
-        },
-        depth: 2,
-      });
-
-      // Group members by position
       const structure = positions.docs.map(position => ({
         ...position,
         members: members.docs.filter(
-          member => {
-            const memberPosition = member.position as any;
-            return memberPosition?.id === position.id || memberPosition === position.id;
-          }
+          member => (member.position as any)?.id === position.id
         ),
       }));
 
-      res.json({
-        period: positions.docs[0]?.period || null,
+      res.render('pages/structure', {
+        title: 'Struktur Organisasi',
+        settings,
+        navigation,
+        periods: periods.docs,
+        selectedPeriod: positions.docs[0]?.period || null,
         structure,
       });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching organization structure' });
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
     }
   });
 
-  // Get member detail
-  app.get('/api/public/members/:slug', async (req, res) => {
+  // Berita & Kegiatan
+  app.get('/berita', async (req, res) => {
     try {
-      const member = await payload.find({
-        collection: 'members',
-        where: { slug: { equals: req.params.slug } },
-        limit: 1,
-        depth: 2,
+      const category = req.query.category as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = 12;
+
+      const [settings, navigation, posts] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'posts',
+          where: {
+            status: { equals: 'published' },
+            ...(category && { category: { equals: category } }),
+          },
+          limit,
+          page,
+          sort: '-publishedDate',
+          depth: 2,
+        }),
+      ]);
+
+      res.render('pages/posts', {
+        title: category ? `Berita - ${category}` : 'Berita & Kegiatan',
+        settings,
+        navigation,
+        posts: posts.docs,
+        pagination: {
+          page: posts.page,
+          totalPages: posts.totalPages,
+          hasNextPage: posts.hasNextPage,
+          hasPrevPage: posts.hasPrevPage,
+        },
+        selectedCategory: category || null,
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Detail Berita
+  app.get('/berita/:slug', async (req, res) => {
+    try {
+      const [settings, navigation, post] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'posts',
+          where: {
+            slug: { equals: req.params.slug },
+            status: { equals: 'published' },
+          },
+          limit: 1,
+          depth: 2,
+        }),
+      ]);
+
+      if (post.docs.length === 0) {
+        return res.status(404).render('pages/error', {
+          title: '404',
+          error: 'Berita tidak ditemukan',
+          settings,
+          navigation,
+        });
+      }
+
+      // Increment views
+      await payload.update({
+        collection: 'posts',
+        id: post.docs[0].id,
+        data: { views: ((post.docs[0].views as number) || 0) + 1 },
       });
 
-      if (member.docs.length === 0) {
-        return res.status(404).json({ error: 'Member not found' });
-      }
-
-      res.json(member.docs[0]);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching member' });
-    }
-  });
-
-  // ============================================
-  // 2. NEWS & POSTS (Berita & Kegiatan)
-  // ============================================
-
-  // Get all posts (with filters)
-  app.get('/api/public/posts', async (req, res) => {
-    try {
-      const { category, tag, limit = 10, page = 1 } = req.query;
-
-      const where: any = { status: { equals: 'published' } };
-
-      if (category && typeof category === 'string') {
-        where.category = { equals: category };
-      }
-
-      const posts = await payload.find({
+      // Get related posts
+      const relatedPosts = await payload.find({
         collection: 'posts',
-        where,
-        limit: typeof limit === 'string' ? parseInt(limit) : 10,
-        page: typeof page === 'string' ? parseInt(page) : 1,
+        where: {
+          status: { equals: 'published' },
+          category: { equals: post.docs[0].category },
+          id: { not_equals: post.docs[0].id },
+        },
+        limit: 3,
         sort: '-publishedDate',
         depth: 2,
       });
 
-      res.json(posts);
+      res.render('pages/post-detail', {
+        title: post.docs[0].title,
+        settings,
+        navigation,
+        post: post.docs[0],
+        relatedPosts: relatedPosts.docs,
+      });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching posts' });
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
     }
   });
 
-  // Get latest posts
-  app.get('/api/public/posts/latest', async (req, res) => {
+  // Galeri
+  app.get('/galeri', async (req, res) => {
     try {
-      const { limit = '5' } = req.query;
+      const type = req.query.type as string;
+      const page = parseInt(req.query.page as string) || 1;
+
+      const [settings, navigation, galleries] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'galleries',
+          where: type ? { type: { equals: type } } : {},
+          limit: 12,
+          page,
+          sort: '-eventDate',
+          depth: 2,
+        }),
+      ]);
+
+      res.render('pages/gallery', {
+        title: 'Galeri',
+        settings,
+        navigation,
+        galleries: galleries.docs,
+        pagination: {
+          page: galleries.page,
+          totalPages: galleries.totalPages,
+          hasNextPage: galleries.hasNextPage,
+          hasPrevPage: galleries.hasPrevPage,
+        },
+        selectedType: type || null,
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Detail Galeri
+  app.get('/galeri/:slug', async (req, res) => {
+    try {
+      const [settings, navigation, gallery] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'galleries',
+          where: { slug: { equals: req.params.slug } },
+          limit: 1,
+          depth: 2,
+        }),
+      ]);
+
+      if (gallery.docs.length === 0) {
+        return res.status(404).render('pages/error', {
+          title: '404',
+          error: 'Galeri tidak ditemukan',
+          settings,
+          navigation,
+        });
+      }
+
+      res.render('pages/gallery-detail', {
+        title: gallery.docs[0].title,
+        settings,
+        navigation,
+        gallery: gallery.docs[0],
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Dokumen
+  app.get('/dokumen', async (req, res) => {
+    try {
+      const category = req.query.category as string;
+      const [settings, navigation, documents] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'documents',
+          where: {
+            isPublic: { equals: true },
+            ...(category && { category: { equals: category } }),
+          },
+          limit: 20,
+          sort: '-uploadDate',
+          depth: 2,
+        }),
+      ]);
+
+      res.render('pages/documents', {
+        title: 'Dokumen',
+        settings,
+        navigation,
+        documents: documents.docs,
+        selectedCategory: category || null,
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Halaman Statis (Pages) - FITUR BARU
+  app.get('/halaman/:slug', async (req, res) => {
+    try {
+      const [settings, navigation, page] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'pages',
+          where: {
+            slug: { equals: req.params.slug },
+            status: { equals: 'published' },
+          },
+          limit: 1,
+          depth: 2,
+        }),
+      ]);
+
+      if (page.docs.length === 0) {
+        return res.status(404).render('pages/error', {
+          title: '404',
+          error: 'Halaman tidak ditemukan',
+          settings,
+          navigation,
+        });
+      }
+
+      res.render('pages/page-detail', {
+        title: page.docs[0].title,
+        settings,
+        navigation,
+        page: page.docs[0],
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Kontak
+  app.get('/kontak', async (req, res) => {
+    try {
+      const [settings, navigation] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+      ]);
+
+      res.render('pages/contact', {
+        title: 'Kontak',
+        settings,
+        navigation,
+        success: req.query.success === 'true',
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // Submit Kontak
+  app.post('/kontak', async (req, res) => {
+    try {
+      const { name, email, subject, message } = req.body;
+
+      if (!name || !email || !message) {
+        return res.redirect('/kontak?error=true');
+      }
+
+      // Log contact form submission
+      payload.logger.info(`Contact form: ${name} - ${email} - ${subject}`);
+
+      res.redirect('/kontak?success=true');
+    } catch (error) {
+      res.redirect('/kontak?error=true');
+    }
+  });
+
+  // Search
+  app.get('/cari', async (req, res) => {
+    try {
+      const q = req.query.q as string;
+      const [settings, navigation, results] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        q
+          ? payload.find({
+              collection: 'posts',
+              where: {
+                and: [
+                  { status: { equals: 'published' } },
+                  {
+                    or: [
+                      { title: { contains: q } },
+                      { excerpt: { contains: q } },
+                    ],
+                  },
+                ],
+              },
+              limit: 20,
+              sort: '-publishedDate',
+              depth: 2,
+            })
+          : null,
+      ]);
+
+      res.render('pages/search', {
+        title: 'Pencarian',
+        settings,
+        navigation,
+        query: q || '',
+        results: results?.docs || [],
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+      });
+    }
+  });
+
+  // ============================================
+  // PUBLIC API ROUTES
+  // ============================================
+
+  // API: Get all published posts
+  app.get('/api/posts', async (req, res) => {
+    try {
+      const { category, page = 1, limit = 10 } = req.query;
 
       const posts = await payload.find({
         collection: 'posts',
-        where: { status: { equals: 'published' } },
-        limit: typeof limit === 'string' ? parseInt(limit) : 5,
+        where: {
+          status: { equals: 'published' },
+          ...(category && { category: { equals: category as string } }),
+        },
+        limit: Number(limit),
+        page: Number(page),
         sort: '-publishedDate',
         depth: 2,
       });
 
-      res.json(posts);
+      res.json({
+        success: true,
+        data: posts.docs,
+        pagination: {
+          page: posts.page,
+          totalPages: posts.totalPages,
+          totalDocs: posts.totalDocs,
+          hasNextPage: posts.hasNextPage,
+          hasPrevPage: posts.hasPrevPage,
+        },
+      });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching latest posts' });
+      res.status(500).json({ success: false, error: 'Failed to fetch posts' });
     }
   });
 
-  // Get post by slug
-  app.get('/api/public/posts/:slug', async (req, res) => {
+  // API: Get single post by slug
+  app.get('/api/posts/:slug', async (req, res) => {
     try {
       const post = await payload.find({
         collection: 'posts',
@@ -216,345 +616,215 @@ const start = async () => {
       });
 
       if (post.docs.length === 0) {
-        return res.status(404).json({ error: 'Post not found' });
+        return res.status(404).json({ success: false, error: 'Post not found' });
       }
 
-      // Increment views
-      const currentViews = (post.docs[0].views as number) || 0;
-      await payload.update({
-        collection: 'posts',
-        id: post.docs[0].id,
-        data: {
-          views: currentViews + 1,
-        },
-      });
-
-      res.json(post.docs[0]);
+      res.json({ success: true, data: post.docs[0] });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching post' });
+      res.status(500).json({ success: false, error: 'Failed to fetch post' });
     }
   });
 
-  // Search posts
-  app.get('/api/public/posts/search', async (req, res) => {
+  // API: Get members by period
+  app.get('/api/members', async (req, res) => {
     try {
-      const { q, limit = '10' } = req.query;
+      const { period, active = true } = req.query;
 
-      if (!q || typeof q !== 'string') {
-        return res.status(400).json({ error: 'Search query required' });
-      }
-
-      const posts = await payload.find({
-        collection: 'posts',
+      const members = await payload.find({
+        collection: 'members',
         where: {
-          and: [
-            { status: { equals: 'published' } },
-            {
-              or: [
-                { title: { contains: q } },
-                { excerpt: { contains: q } },
-              ],
-            },
-          ],
+          ...(period && { period: { equals: period as string } }),
+          isActive: { equals: active === 'true' },
         },
-        limit: typeof limit === 'string' ? parseInt(limit) : 10,
-        sort: '-publishedDate',
         depth: 2,
       });
 
-      res.json(posts);
+      res.json({ success: true, data: members.docs });
     } catch (error) {
-      res.status(500).json({ error: 'Error searching posts' });
+      res.status(500).json({ success: false, error: 'Failed to fetch members' });
     }
   });
 
-  // ============================================
-  // 3. GALLERY (Galeri)
-  // ============================================
-
-  // Get all galleries
-  app.get('/api/public/galleries', async (req, res) => {
+  // API: Get organization structure
+  app.get('/api/structure', async (req, res) => {
     try {
-      const { type, limit = '12', page = '1' } = req.query;
+      const { period } = req.query;
 
-      const where: any = {};
-      if (type && typeof type === 'string') {
-        where.type = { equals: type };
+      let periodId = period as string;
+      if (!periodId) {
+        const activePeriod = await payload.find({
+          collection: 'periods',
+          where: { isActive: { equals: true } },
+          limit: 1,
+        });
+        periodId = activePeriod.docs[0]?.id;
       }
+
+      const [positions, members] = await Promise.all([
+        payload.find({
+          collection: 'positions',
+          where: { period: { equals: periodId } },
+          sort: 'order',
+          depth: 2,
+        }),
+        payload.find({
+          collection: 'members',
+          where: {
+            period: { equals: periodId },
+            isActive: { equals: true },
+          },
+          depth: 2,
+        }),
+      ]);
+
+      const structure = positions.docs.map(position => ({
+        ...position,
+        members: members.docs.filter(
+          member => (member.position as any)?.id === position.id
+        ),
+      }));
+
+      res.json({ success: true, data: structure });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to fetch structure' });
+    }
+  });
+
+  // API: Get galleries
+  app.get('/api/galleries', async (req, res) => {
+    try {
+      const { type, page = 1, limit = 12 } = req.query;
 
       const galleries = await payload.find({
         collection: 'galleries',
-        where,
-        limit: typeof limit === 'string' ? parseInt(limit) : 12,
-        page: typeof page === 'string' ? parseInt(page) : 1,
+        where: type ? { type: { equals: type as string } } : {},
+        limit: Number(limit),
+        page: Number(page),
         sort: '-eventDate',
         depth: 2,
       });
 
-      res.json(galleries);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching galleries' });
-    }
-  });
-
-  // Get gallery by slug
-  app.get('/api/public/galleries/:slug', async (req, res) => {
-    try {
-      const gallery = await payload.find({
-        collection: 'galleries',
-        where: { slug: { equals: req.params.slug } },
-        limit: 1,
-        depth: 2,
+      res.json({
+        success: true,
+        data: galleries.docs,
+        pagination: {
+          page: galleries.page,
+          totalPages: galleries.totalPages,
+          totalDocs: galleries.totalDocs,
+        },
       });
-
-      if (gallery.docs.length === 0) {
-        return res.status(404).json({ error: 'Gallery not found' });
-      }
-
-      res.json(gallery.docs[0]);
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching gallery' });
+      res.status(500).json({ success: false, error: 'Failed to fetch galleries' });
     }
   });
 
-  // ============================================
-  // 4. DOCUMENTS (Arsip & Dokumen)
-  // ============================================
-
-  // Get public documents
-  app.get('/api/public/documents', async (req, res) => {
+  // API: Get public documents
+  app.get('/api/documents', async (req, res) => {
     try {
-      const { category, limit = '20', page = '1' } = req.query;
-
-      const where: any = { isPublic: { equals: true } };
-
-      if (category && typeof category === 'string') {
-        where.category = { equals: category };
-      }
+      const { category } = req.query;
 
       const documents = await payload.find({
         collection: 'documents',
-        where,
-        limit: typeof limit === 'string' ? parseInt(limit) : 20,
-        page: typeof page === 'string' ? parseInt(page) : 1,
+        where: {
+          isPublic: { equals: true },
+          ...(category && { category: { equals: category as string } }),
+        },
         sort: '-uploadDate',
         depth: 2,
       });
 
-      res.json(documents);
+      res.json({ success: true, data: documents.docs });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching documents' });
+      res.status(500).json({ success: false, error: 'Failed to fetch documents' });
     }
   });
 
-  // ============================================
-  // 5. PAGES (Halaman Statis)
-  // ============================================
-
-  // Get page by slug
-  app.get('/api/public/pages/:slug', async (req, res) => {
+  // API: Get settings and about
+  app.get('/api/settings', async (req, res) => {
     try {
-      const page = await payload.find({
-        collection: 'pages',
-        where: {
-          slug: { equals: req.params.slug },
-          status: { equals: 'published' },
-        },
-        limit: 1,
-        depth: 2,
-      });
-
-      if (page.docs.length === 0) {
-        return res.status(404).json({ error: 'Page not found' });
-      }
-
-      res.json(page.docs[0]);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching page' });
-    }
-  });
-
-  // ============================================
-  // 6. GLOBALS (Settings, About, Navigation)
-  // ============================================
-
-  // Get website settings
-  app.get('/api/public/settings', async (req, res) => {
-    try {
-      const settings = await payload.findGlobal({
-        slug: 'settings',
-        depth: 2,
-      });
-      res.json(settings);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching settings' });
-    }
-  });
-
-  // Get about info
-  app.get('/api/public/about', async (req, res) => {
-    try {
-      const about = await payload.findGlobal({
-        slug: 'about',
-        depth: 2,
-      });
-      res.json(about);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching about info' });
-    }
-  });
-
-  // Get navigation
-  app.get('/api/public/navigation', async (req, res) => {
-    try {
-      const navigation = await payload.findGlobal({
-        slug: 'navigation',
-      });
-      res.json(navigation);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching navigation' });
-    }
-  });
-
-  // ============================================
-  // 7. STATISTICS & DASHBOARD DATA
-  // ============================================
-
-  // Get dashboard statistics
-  app.get('/api/public/stats', async (req, res) => {
-    try {
-      const [members, posts, galleries, documents] = await Promise.all([
-        payload.find({
-          collection: 'members',
-          where: { isActive: { equals: true } },
-          limit: 0,
-        }),
-        payload.find({
-          collection: 'posts',
-          where: { status: { equals: 'published' } },
-          limit: 0,
-        }),
-        payload.find({
-          collection: 'galleries',
-          limit: 0,
-        }),
-        payload.find({
-          collection: 'documents',
-          where: { isPublic: { equals: true } },
-          limit: 0,
-        }),
+      const [settings, about] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'about', depth: 2 }),
       ]);
 
-      res.json({
-        totalMembers: members.totalDocs,
-        totalPosts: posts.totalDocs,
-        totalGalleries: galleries.totalDocs,
-        totalDocuments: documents.totalDocs,
-      });
+      res.json({ success: true, data: { settings, about } });
     } catch (error) {
-      res.status(500).json({ error: 'Error fetching statistics' });
+      res.status(500).json({ success: false, error: 'Failed to fetch settings' });
     }
   });
 
-  // ============================================
-  // 8. CONTACT FORM (Optional)
-  // ============================================
-
-  app.post('/api/public/contact', async (req, res) => {
+  // API: Submit contact form
+  app.post('/api/contact', async (req, res) => {
     try {
       const { name, email, subject, message } = req.body;
 
       if (!name || !email || !message) {
-        return res.status(400).json({ error: 'All fields are required' });
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Name, email, and message are required' 
+        });
       }
 
-      // Here you can save to database or send email
-      // For now, just return success
-      payload.logger.info(`Contact form submitted: ${name} - ${email}`);
+      // Log the contact submission
+      payload.logger.info(`API Contact: ${name} - ${email}`);
 
-      res.json({
-        success: true,
-        message: 'Pesan Anda telah terkirim. Terima kasih!',
-      });
+      // Here you can add email sending logic or save to database
+
+      res.json({ success: true, message: 'Contact form submitted successfully' });
     } catch (error) {
-      res.status(500).json({ error: 'Error sending message' });
+      res.status(500).json({ success: false, error: 'Failed to submit contact form' });
     }
   });
 
   // ============================================
-  // API DOCUMENTATION
+  // 404 Handler
   // ============================================
-
-  app.get('/api-docs', (req, res) => {
-    res.json({
-      title: 'CMS Organisasi - Public API Documentation',
-      version: '1.0.0',
-      endpoints: {
-        organization: {
-          'GET /api/public/period/active': 'Get active period',
-          'GET /api/public/periods': 'Get all periods',
-          'GET /api/public/structure/:periodId?': 'Get organization structure',
-          'GET /api/public/members/:slug': 'Get member detail',
-        },
-        posts: {
-          'GET /api/public/posts': 'Get all posts (with filters)',
-          'GET /api/public/posts/latest': 'Get latest posts',
-          'GET /api/public/posts/:slug': 'Get post by slug',
-          'GET /api/public/posts/search?q=keyword': 'Search posts',
-        },
-        galleries: {
-          'GET /api/public/galleries': 'Get all galleries',
-          'GET /api/public/galleries/:slug': 'Get gallery by slug',
-        },
-        documents: {
-          'GET /api/public/documents': 'Get public documents',
-        },
-        pages: {
-          'GET /api/public/pages/:slug': 'Get page by slug',
-        },
-        globals: {
-          'GET /api/public/settings': 'Get website settings',
-          'GET /api/public/about': 'Get about info',
-          'GET /api/public/navigation': 'Get navigation menu',
-        },
-        stats: {
-          'GET /api/public/stats': 'Get dashboard statistics',
-        },
-        contact: {
-          'POST /api/public/contact': 'Submit contact form',
-        },
-      },
-      admin: {
-        panel: '/admin',
-        restAPI: '/api',
-        graphQL: '/api/graphql',
-      },
-    });
-  });
-
-  // ============================================
-  // SERVE STATIC FRONTEND FILES
-  // ============================================
-  
-  // Serve static files from public folder
-  app.use(express.static(path.join(__dirname, '../public')));
-
-  // Root route - Serve frontend HTML
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+  app.use(async (req, res) => {
+    try {
+      const [settings, navigation] = await loadCommonData();
+      res.status(404).render('pages/error', {
+        title: '404 - Halaman Tidak Ditemukan',
+        error: 'Halaman yang Anda cari tidak ditemukan',
+        settings,
+        navigation,
+      });
+    } catch (error) {
+      res.status(404).send('404 - Page Not Found');
+    }
   });
 
   // Start server
   app.listen(PORT, () => {
     console.log('\n🚀 ========================================');
-    console.log('   CMS ORGANISASI - Server Started');
+    console.log('   CMS Organisasi - Server Started');
     console.log('========================================');
     console.log(`📍 Server:        http://localhost:${PORT}`);
     console.log(`🌐 Frontend:      http://localhost:${PORT}/`);
     console.log(`🎨 Admin Panel:   http://localhost:${PORT}/admin`);
-    console.log(`📚 API Docs:      http://localhost:${PORT}/api-docs`);
     console.log(`🔌 REST API:      http://localhost:${PORT}/api`);
-    console.log(`📊 GraphQL:       http://localhost:${PORT}/api/graphql`);
+    console.log('========================================');
+    console.log('\n📋 Available Routes:');
+    console.log('   Frontend:');
+    console.log('   - GET  /                  Homepage');
+    console.log('   - GET  /tentang           Tentang Kami');
+    console.log('   - GET  /struktur          Struktur Organisasi');
+    console.log('   - GET  /berita            Berita & Kegiatan');
+    console.log('   - GET  /berita/:slug      Detail Berita');
+    console.log('   - GET  /galeri            Galeri');
+    console.log('   - GET  /galeri/:slug      Detail Galeri');
+    console.log('   - GET  /dokumen           Dokumen');
+    console.log('   - GET  /halaman/:slug     Halaman Statis');
+    console.log('   - GET  /kontak            Kontak');
+    console.log('   - GET  /cari              Pencarian');
+    console.log('\n   REST API:');
+    console.log('   - GET  /api/posts         Get all posts');
+    console.log('   - GET  /api/posts/:slug   Get single post');
+    console.log('   - GET  /api/members       Get members');
+    console.log('   - GET  /api/structure     Get structure');
+    console.log('   - GET  /api/galleries     Get galleries');
+    console.log('   - GET  /api/documents     Get documents');
+    console.log('   - GET  /api/settings      Get settings');
+    console.log('   - POST /api/contact       Submit contact');
     console.log('========================================\n');
   });
 };

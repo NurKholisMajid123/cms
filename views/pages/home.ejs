@@ -1,0 +1,203 @@
+<%- include('../layouts/main', { 
+  title: title,
+  settings: settings,
+  about: about,
+  stats: stats,
+  latestPosts: latestPosts,
+  activePeriod: activePeriod,
+  body: `
+
+    <!-- Hero Section -->
+    <section class="hero-section bg-success text-white py-5" style="background: linear-gradient(135deg, #198754 0%, #0d6efd 100%);">
+      <div class="container py-5">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            <h1 class="display-4 fw-bold mb-3">Himpunan Mahasiswa Islam</h1>
+            ${about && about.vision ? `<p class="lead mb-4">${about.vision}</p>` : ''}
+            <div class="d-flex gap-3">
+              <a href="/tentang" class="btn btn-light btn-lg">
+                <i class="bi bi-info-circle me-2"></i>Tentang Kami
+              </a>
+              <a href="/kontak" class="btn btn-outline-light btn-lg">
+                <i class="bi bi-envelope me-2"></i>Hubungi Kami
+              </a>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            ${settings.logo ? `
+            <div class="text-center">
+              <img src="${settings.logo.url}" alt="Logo HMI" class="img-fluid" style="max-height: 400px;">
+            </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statistics Section -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="row g-4">
+          <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center h-100">
+              <div class="card-body">
+                <div class="display-4 text-success mb-2">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+                <h3 class="fw-bold">${stats.members || 0}</h3>
+                <p class="text-muted mb-0">Anggota Aktif</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center h-100">
+              <div class="card-body">
+                <div class="display-4 text-primary mb-2">
+                  <i class="bi bi-newspaper"></i>
+                </div>
+                <h3 class="fw-bold">${stats.posts || 0}</h3>
+                <p class="text-muted mb-0">Berita & Kegiatan</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center h-100">
+              <div class="card-body">
+                <div class="display-4 text-warning mb-2">
+                  <i class="bi bi-images"></i>
+                </div>
+                <h3 class="fw-bold">${stats.galleries || 0}</h3>
+                <p class="text-muted mb-0">Galeri Foto</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 col-6">
+            <div class="card border-0 shadow-sm text-center h-100">
+              <div class="card-body">
+                <div class="display-4 text-danger mb-2">
+                  <i class="bi bi-calendar-event"></i>
+                </div>
+                <h3 class="fw-bold">${activePeriod ? new Date(activePeriod.startDate).getFullYear() : '-'}</h3>
+                <p class="text-muted mb-0">Periode Aktif</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Vision Mission -->
+    ${activePeriod && (activePeriod.vision || activePeriod.mission) ? `
+    <section class="py-5">
+      <div class="container">
+        <div class="row">
+          ${activePeriod.vision ? `
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="bi bi-eye text-success fs-3"></i>
+                  </div>
+                  <h3 class="mb-0">Visi</h3>
+                </div>
+                <p class="text-muted">${activePeriod.vision}</p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+          ${activePeriod.mission ? `
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center mb-3">
+                  <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                    <i class="bi bi-flag text-primary fs-3"></i>
+                  </div>
+                  <h3 class="mb-0">Misi</h3>
+                </div>
+                <p class="text-muted">${activePeriod.mission}</p>
+              </div>
+            </div>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    </section>
+    ` : ''}
+
+    <!-- Latest News -->
+    <section class="py-5 bg-light">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="fw-bold mb-2">Berita & Kegiatan Terbaru</h2>
+            <p class="text-muted mb-0">Update terbaru dari HMI</p>
+          </div>
+          <a href="/berita" class="btn btn-success">
+            Lihat Semua <i class="bi bi-arrow-right ms-2"></i>
+          </a>
+        </div>
+        
+        <div class="row g-4">
+          ${latestPosts && latestPosts.length > 0 ? latestPosts.map(post => `
+            <div class="col-lg-4 col-md-6">
+              <div class="card border-0 shadow-sm h-100 hover-lift">
+                ${post.featuredImage ? `
+                <img src="${post.featuredImage.url}" class="card-img-top" alt="${post.title}" style="height: 200px; object-fit: cover;">
+                ` : ''}
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="badge bg-${post.category === 'news' ? 'primary' : post.category === 'activity' ? 'success' : post.category === 'announcement' ? 'warning' : 'info'}">
+                      ${post.category === 'news' ? 'Berita' : post.category === 'activity' ? 'Kegiatan' : post.category === 'announcement' ? 'Pengumuman' : 'Prestasi'}
+                    </span>
+                    <small class="text-muted">
+                      <i class="bi bi-calendar3 me-1"></i>
+                      ${new Date(post.publishedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </small>
+                  </div>
+                  <h5 class="card-title mb-2">
+                    <a href="/berita/${post.slug}" class="text-decoration-none text-dark stretched-link">
+                      ${post.title}
+                    </a>
+                  </h5>
+                  <p class="card-text text-muted small">${post.excerpt}</p>
+                  <div class="d-flex align-items-center text-muted small">
+                    <i class="bi bi-eye me-1"></i>
+                    <span>${post.views || 0} views</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('') : '<div class="col-12"><p class="text-center text-muted">Belum ada berita</p></div>'}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-5 bg-success text-white">
+      <div class="container text-center">
+        <h2 class="fw-bold mb-3">Bergabung Bersama Kami</h2>
+        <p class="lead mb-4">Mari bersama membangun umat dan bangsa melalui pendidikan dan dakwah</p>
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="/kontak" class="btn btn-light btn-lg">
+            <i class="bi bi-person-plus me-2"></i>Daftar Sekarang
+          </a>
+          <a href="/tentang" class="btn btn-outline-light btn-lg">
+            <i class="bi bi-info-circle me-2"></i>Pelajari Lebih Lanjut
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <style>
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    </style>
+  `
+}) %>

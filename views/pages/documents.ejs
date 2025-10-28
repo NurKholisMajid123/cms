@@ -1,0 +1,142 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          <h1 class="display-4 fw-bold text-success mb-2">Dokumen & Arsip</h1>
+          <p class="lead text-muted">Koleksi dokumen penting organisasi</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter -->
+    <section class="py-4 bg-light">
+      <div class="container">
+        <div class="d-flex flex-wrap gap-2 justify-content-center">
+          <a href="/dokumen" class="btn btn-${!selectedCategory ? 'success' : 'outline-success'}">
+            <i class="bi bi-grid me-2"></i>Semua
+          </a>
+          <a href="/dokumen?category=sk" class="btn btn-${selectedCategory === 'sk' ? 'success' : 'outline-success'}">
+            <i class="bi bi-file-earmark-text me-2"></i>SK
+          </a>
+          <a href="/dokumen?category=se" class="btn btn-${selectedCategory === 'se' ? 'success' : 'outline-success'}">
+            <i class="bi bi-envelope-paper me-2"></i>Surat Edaran
+          </a>
+          <a href="/dokumen?category=report" class="btn btn-${selectedCategory === 'report' ? 'success' : 'outline-success'}">
+            <i class="bi bi-file-earmark-bar-graph me-2"></i>Laporan
+          </a>
+          <a href="/dokumen?category=proposal" class="btn btn-${selectedCategory === 'proposal' ? 'success' : 'outline-success'}">
+            <i class="bi bi-file-earmark-slides me-2"></i>Proposal
+          </a>
+          <a href="/dokumen?category=ad_art" class="btn btn-${selectedCategory === 'ad_art' ? 'success' : 'outline-success'}">
+            <i class="bi bi-book me-2"></i>AD/ART
+          </a>
+          <a href="/dokumen?category=other" class="btn btn-${selectedCategory === 'other' ? 'success' : 'outline-success'}">
+            <i class="bi bi-files me-2"></i>Lainnya
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documents List -->
+    <section class="py-5">
+      <div class="container">
+        ${documents && documents.length > 0 ? `
+          <div class="row g-4">
+            ${documents.map(doc => `
+              <div class="col-lg-6">
+                <div class="card border-0 shadow-sm h-100 hover-lift">
+                  <div class="card-body">
+                    <div class="d-flex align-items-start">
+                      <div class="bg-success bg-opacity-10 rounded p-3 me-3">
+                        <i class="bi bi-file-earmark-pdf text-success" style="font-size: 2rem;"></i>
+                      </div>
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                          <h5 class="card-title mb-0">${doc.title}</h5>
+                          <span class="badge bg-${
+                            doc.category === 'sk' ? 'primary' : 
+                            doc.category === 'se' ? 'info' : 
+                            doc.category === 'report' ? 'warning' : 
+                            doc.category === 'proposal' ? 'success' : 
+                            doc.category === 'ad_art' ? 'danger' : 
+                            'secondary'
+                          }">
+                            ${
+                              doc.category === 'sk' ? 'SK' : 
+                              doc.category === 'se' ? 'SE' : 
+                              doc.category === 'report' ? 'Laporan' : 
+                              doc.category === 'proposal' ? 'Proposal' : 
+                              doc.category === 'ad_art' ? 'AD/ART' : 
+                              'Lainnya'
+                            }
+                          </span>
+                        </div>
+                        ${doc.description ? `
+                          <p class="text-muted small mb-3">${doc.description}</p>
+                        ` : ''}
+                        <div class="d-flex align-items-center justify-content-between text-muted small mb-3">
+                          <div>
+                            <i class="bi bi-calendar3 me-1"></i>
+                            ${doc.documentDate ? new Date(doc.documentDate).toLocaleDateString('id-ID', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            }) : new Date(doc.uploadDate).toLocaleDateString('id-ID', { 
+                              day: 'numeric', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}
+                          </div>
+                          ${doc.file ? `
+                            <div>
+                              <i class="bi bi-file-earmark me-1"></i>
+                              ${(doc.file.filesize / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          ` : ''}
+                        </div>
+                        ${doc.tags && doc.tags.length > 0 ? `
+                          <div class="mb-3">
+                            ${doc.tags.map(item => `
+                              <span class="badge bg-secondary me-1">${item.tag}</span>
+                            `).join('')}
+                          </div>
+                        ` : ''}
+                        ${doc.file ? `
+                          <a href="${doc.file.url}" 
+                             target="_blank" 
+                             class="btn btn-success btn-sm">
+                            <i class="bi bi-download me-2"></i>Unduh Dokumen
+                          </a>
+                        ` : ''}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        ` : `
+          <div class="text-center py-5">
+            <i class="bi bi-file-earmark-text text-muted" style="font-size: 5rem;"></i>
+            <h4 class="mt-3 text-muted">Belum ada dokumen tersedia</h4>
+            <p class="text-muted">Dokumen akan ditampilkan di sini</p>
+          </div>
+        `}
+      </div>
+    </section>
+
+    <style>
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    </style>
+  `
+}) %>

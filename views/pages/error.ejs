@@ -1,0 +1,28 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <section class="py-5">
+      <div class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-6 text-center">
+            <div class="py-5">
+              <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 6rem;"></i>
+              <h1 class="display-1 fw-bold mt-4">${title === '404' ? '404' : 'Error'}</h1>
+              <h3 class="fw-bold mb-3">${title === '404' ? 'Halaman Tidak Ditemukan' : 'Terjadi Kesalahan'}</h3>
+              <p class="lead text-muted mb-4">${error || 'Maaf, terjadi kesalahan pada sistem'}</p>
+              <div class="d-flex gap-3 justify-content-center">
+                <a href="/" class="btn btn-success btn-lg">
+                  <i class="bi bi-house me-2"></i>Kembali ke Beranda
+                </a>
+                <a href="/berita" class="btn btn-outline-success btn-lg">
+                  <i class="bi bi-newspaper me-2"></i>Lihat Berita
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `
+}) %>

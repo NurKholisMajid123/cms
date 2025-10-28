@@ -1,0 +1,304 @@
+<%- include('../layouts/main', {
+  title: post.title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-4">
+      <div class="container">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item"><a href="/">Beranda</a></li>
+            <li class="breadcrumb-item"><a href="/berita">Berita</a></li>
+            <li class="breadcrumb-item active">${post.title}</li>
+          </ol>
+        </nav>
+      </div>
+    </section>
+
+    <!-- Post Content -->
+    <section class="py-5">
+      <div class="container">
+        <div class="row">
+          <!-- Main Content -->
+          <div class="col-lg-8">
+            <article>
+              <!-- Post Header -->
+              <div class="mb-4">
+                <span class="badge bg-${
+                  post.category === 'news' ? 'primary' : 
+                  post.category === 'activity' ? 'success' : 
+                  post.category === 'announcement' ? 'warning' : 
+                  'info'
+                } mb-3">
+                  ${
+                    post.category === 'news' ? 'Berita' : 
+                    post.category === 'activity' ? 'Kegiatan' : 
+                    post.category === 'announcement' ? 'Pengumuman' : 
+                    'Prestasi'
+                  }
+                </span>
+                <h1 class="display-5 fw-bold mb-3">${post.title}</h1>
+                
+                <div class="d-flex align-items-center text-muted mb-3">
+                  <div class="me-4">
+                    <i class="bi bi-person-circle me-2"></i>
+                    <span>${post.author?.name || 'Admin'}</span>
+                  </div>
+                  <div class="me-4">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    <span>${new Date(post.publishedDate).toLocaleDateString('id-ID', { 
+                      weekday: 'long',
+                      day: 'numeric', 
+                      month: 'long', 
+                      year: 'numeric' 
+                    })}</span>
+                  </div>
+                  <div>
+                    <i class="bi bi-eye me-2"></i>
+                    <span>${post.views || 0} views</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Featured Image -->
+              ${post.featuredImage ? `
+              <div class="mb-4">
+                <img src="${post.featuredImage.url}" 
+                     alt="${post.title}" 
+                     class="img-fluid rounded shadow-sm w-100"
+                     style="max-height: 500px; object-fit: cover;">
+              </div>
+              ` : ''}
+
+              <!-- Post Content -->
+              <div class="post-content mb-5">
+                ${post.content}
+              </div>
+
+              <!-- Gallery -->
+              ${post.gallery && post.gallery.length > 0 ? `
+              <div class="mb-5">
+                <h4 class="fw-bold mb-3">Galeri Foto</h4>
+                <div class="row g-3">
+                  ${post.gallery.map(item => `
+                    <div class="col-md-4 col-sm-6">
+                      <div class="position-relative">
+                        <img src="${item.image.url}" 
+                             alt="${item.caption || ''}" 
+                             class="img-fluid rounded shadow-sm w-100"
+                             style="height: 200px; object-fit: cover; cursor: pointer;"
+                             data-bs-toggle="modal"
+                             data-bs-target="#imageModal"
+                             data-image="${item.image.url}"
+                             data-caption="${item.caption || ''}">
+                        ${item.caption ? `
+                        <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-75 text-white p-2 small">
+                          ${item.caption}
+                        </div>
+                        ` : ''}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              ` : ''}
+
+              <!-- Tags -->
+              ${post.tags && post.tags.length > 0 ? `
+              <div class="mb-4">
+                <h6 class="fw-bold mb-3">Tag:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                  ${post.tags.map(item => `
+                    <span class="badge bg-secondary">${item.tag}</span>
+                  `).join('')}
+                </div>
+              </div>
+              ` : ''}
+
+              <!-- Share Buttons -->
+              <div class="border-top border-bottom py-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between">
+                  <h6 class="fw-bold mb-0">Bagikan:</h6>
+                  <div class="d-flex gap-2">
+                    <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('http://localhost:3000/berita/' + post.slug)}" 
+                       target="_blank" 
+                       class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-facebook me-1"></i>Facebook
+                    </a>
+                    <a href="https://twitter.com/intent/tweet?url=${encodeURIComponent('http://localhost:3000/berita/' + post.slug)}&text=${encodeURIComponent(post.title)}" 
+                       target="_blank" 
+                       class="btn btn-sm btn-outline-info">
+                      <i class="bi bi-twitter me-1"></i>Twitter
+                    </a>
+                    <a href="https://wa.me/?text=${encodeURIComponent(post.title + ' - http://localhost:3000/berita/' + post.slug)}" 
+                       target="_blank" 
+                       class="btn btn-sm btn-outline-success">
+                      <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Related Posts -->
+            ${relatedPosts && relatedPosts.length > 0 ? `
+            <div class="mt-5">
+              <h4 class="fw-bold mb-4">Berita Terkait</h4>
+              <div class="row g-4">
+                ${relatedPosts.map(related => `
+                  <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100 hover-lift">
+                      ${related.featuredImage ? `
+                      <img src="${related.featuredImage.url}" 
+                           class="card-img-top" 
+                           alt="${related.title}"
+                           style="height: 150px; object-fit: cover;">
+                      ` : ''}
+                      <div class="card-body">
+                        <h6 class="card-title mb-2">
+                          <a href="/berita/${related.slug}" class="text-decoration-none text-dark stretched-link">
+                            ${related.title}
+                          </a>
+                        </h6>
+                        <small class="text-muted">
+                          <i class="bi bi-calendar3 me-1"></i>
+                          ${new Date(related.publishedDate).toLocaleDateString('id-ID', { 
+                            day: 'numeric', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </small>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+          </div>
+
+          <!-- Sidebar -->
+          <div class="col-lg-4">
+            <!-- Search -->
+            <div class="card border-0 shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title fw-bold mb-3">Cari Berita</h5>
+                <form action="/cari" method="GET">
+                  <div class="input-group">
+                    <input type="text" 
+                           name="q" 
+                           class="form-control" 
+                           placeholder="Cari berita...">
+                    <button class="btn btn-success" type="submit">
+                      <i class="bi bi-search"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Categories -->
+            <div class="card border-0 shadow-sm mb-4">
+              <div class="card-body">
+                <h5 class="card-title fw-bold mb-3">Kategori</h5>
+                <div class="d-grid gap-2">
+                  <a href="/berita?category=news" class="btn btn-outline-primary text-start">
+                    <i class="bi bi-newspaper me-2"></i>Berita
+                  </a>
+                  <a href="/berita?category=activity" class="btn btn-outline-success text-start">
+                    <i class="bi bi-calendar-event me-2"></i>Kegiatan
+                  </a>
+                  <a href="/berita?category=announcement" class="btn btn-outline-warning text-start">
+                    <i class="bi bi-megaphone me-2"></i>Pengumuman
+                  </a>
+                  <a href="/berita?category=achievement" class="btn btn-outline-info text-start">
+                    <i class="bi bi-trophy me-2"></i>Prestasi
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="card border-0 shadow-sm bg-success text-white">
+              <div class="card-body text-center">
+                <i class="bi bi-envelope-fill mb-3" style="font-size: 3rem;"></i>
+                <h5 class="card-title fw-bold mb-2">Hubungi Kami</h5>
+                <p class="card-text mb-3">Ada pertanyaan atau ingin bergabung?</p>
+                <a href="/kontak" class="btn btn-light">
+                  <i class="bi bi-send me-2"></i>Kirim Pesan
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="imageCaption"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body text-center">
+            <img src="" id="modalImage" class="img-fluid">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+    .post-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+    .post-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    .post-content p {
+      margin-bottom: 1.5rem;
+    }
+    .post-content h2 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: bold;
+    }
+    .post-content h3 {
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      font-weight: bold;
+    }
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const imageModal = document.getElementById('imageModal');
+      if (imageModal) {
+        imageModal.addEventListener('show.bs.modal', function(event) {
+          const button = event.relatedTarget;
+          const imageSrc = button.getAttribute('data-image');
+          const caption = button.getAttribute('data-caption');
+          
+          const modalImage = imageModal.querySelector('#modalImage');
+          const modalCaption = imageModal.querySelector('#imageCaption');
+          
+          modalImage.src = imageSrc;
+          modalCaption.textContent = caption || '';
+        });
+      }
+    });
+    </script>
+  `
+}) %>

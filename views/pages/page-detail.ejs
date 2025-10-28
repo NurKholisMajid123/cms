@@ -1,0 +1,176 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          ${page.featuredImage ? `
+            <div class="mb-4">
+              <img src="${page.featuredImage.url}" 
+                   class="img-fluid rounded shadow-lg" 
+                   alt="${page.title}"
+                   style="max-height: 400px; width: auto; object-fit: cover;">
+            </div>
+          ` : ''}
+          <h1 class="display-4 fw-bold text-success mb-2">${page.title}</h1>
+        </div>
+      </div>
+    </section>
+
+    <!-- Page Content -->
+    <section class="py-5">
+      <div class="container">
+        <div class="row">
+          <!-- Main Content -->
+          <div class="col-lg-8 mx-auto">
+            <article class="page-content">
+              <div class="rich-text-content">
+                ${page.content || ''}
+              </div>
+            </article>
+
+            <!-- Back Button -->
+            <div class="mt-5 pt-4 border-top">
+              <a href="javascript:history.back()" class="btn btn-outline-success">
+                <i class="bi bi-arrow-left me-2"></i>Kembali
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <style>
+    /* Rich Text Content Styling */
+    .rich-text-content {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+    }
+
+    .rich-text-content h1,
+    .rich-text-content h2,
+    .rich-text-content h3,
+    .rich-text-content h4 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      color: #198754;
+    }
+
+    .rich-text-content h1 {
+      font-size: 2.5rem;
+    }
+
+    .rich-text-content h2 {
+      font-size: 2rem;
+    }
+
+    .rich-text-content h3 {
+      font-size: 1.75rem;
+    }
+
+    .rich-text-content h4 {
+      font-size: 1.5rem;
+    }
+
+    .rich-text-content p {
+      margin-bottom: 1.5rem;
+    }
+
+    .rich-text-content ul,
+    .rich-text-content ol {
+      margin-bottom: 1.5rem;
+      padding-left: 2rem;
+    }
+
+    .rich-text-content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .rich-text-content a {
+      color: #198754;
+      text-decoration: underline;
+    }
+
+    .rich-text-content a:hover {
+      color: #146c43;
+    }
+
+    .rich-text-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .rich-text-content blockquote {
+      border-left: 4px solid #198754;
+      padding-left: 1.5rem;
+      margin: 1.5rem 0;
+      font-style: italic;
+      color: #6c757d;
+    }
+
+    .rich-text-content code {
+      background: #f8f9fa;
+      padding: 0.2rem 0.4rem;
+      border-radius: 0.25rem;
+      font-size: 0.9em;
+      color: #d63384;
+    }
+
+    .rich-text-content pre {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    .rich-text-content table {
+      width: 100%;
+      margin: 1.5rem 0;
+      border-collapse: collapse;
+    }
+
+    .rich-text-content table th,
+    .rich-text-content table td {
+      padding: 0.75rem;
+      border: 1px solid #dee2e6;
+    }
+
+    .rich-text-content table th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+
+    .rich-text-content hr {
+      margin: 2rem 0;
+      border-top: 2px solid #dee2e6;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .rich-text-content {
+        font-size: 1rem;
+      }
+
+      .rich-text-content h1 {
+        font-size: 2rem;
+      }
+
+      .rich-text-content h2 {
+        font-size: 1.75rem;
+      }
+
+      .rich-text-content h3 {
+        font-size: 1.5rem;
+      }
+    }
+    </style>
+  `
+}) %>

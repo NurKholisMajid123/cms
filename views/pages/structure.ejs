@@ -1,0 +1,148 @@
+<%- include('../layouts/main', {
+  title: title,
+  settings: settings,
+  body: `
+    <!-- Page Header -->
+    <section class="page-header bg-success bg-opacity-10 py-5">
+      <div class="container">
+        <div class="text-center">
+          <h1 class="display-4 fw-bold text-success mb-2">Struktur Organisasi</h1>
+          <p class="lead text-muted">Kepengurusan HMI</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Period Selector -->
+    <section class="py-4 bg-light">
+      <div class="container">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h5 class="mb-0">Periode: <strong>${selectedPeriod ? selectedPeriod.name : 'Pilih Periode'}</strong></h5>
+          </div>
+          <div class="col-md-6 text-md-end mt-3 mt-md-0">
+            <div class="dropdown d-inline-block">
+              <button class="btn btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="bi bi-calendar3 me-2"></i>Ganti Periode
+              </button>
+              <ul class="dropdown-menu">
+                ${periods && periods.length > 0 ? periods.map(period => `
+                  <li>
+                    <a class="dropdown-item ${selectedPeriod && selectedPeriod.id === period.id ? 'active' : ''}" 
+                       href="/struktur?period=${period.id}">
+                      ${period.name}
+                      ${period.isActive ? '<span class="badge bg-success ms-2">Aktif</span>' : ''}
+                    </a>
+                  </li>
+                `).join('') : '<li><span class="dropdown-item text-muted">Tidak ada periode</span></li>'}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Organization Structure -->
+    <section class="py-5">
+      <div class="container">
+        ${structure && structure.length > 0 ? `
+          <!-- Group by Level -->
+          ${(() => {
+            const grouped = {};
+            structure.forEach(pos => {
+              if (!grouped[pos.level]) grouped[pos.level] = [];
+              grouped[pos.level].push(pos);
+            });
+            
+            const levelOrder = ['pelindung', 'penasehat', 'ketua', 'wakil_ketua', 'sekretaris', 'bendahara', 'koordinator', 'anggota'];
+            const levelNames = {
+              'pelindung': 'Pelindung',
+              'penasehat': 'Penasehat',
+              'ketua': 'Ketua',
+              'wakil_ketua': 'Wakil Ketua',
+              'sekretaris': 'Sekretaris',
+              'bendahara': 'Bendahara',
+              'koordinator': 'Koordinator Bidang',
+              'anggota': 'Anggota Bidang'
+            };
+            
+            return levelOrder.map(level => {
+              if (!grouped[level] || grouped[level].length === 0) return '';
+              
+              return `
+                <div class="mb-5">
+                  <h3 class="fw-bold text-success mb-4 pb-2 border-bottom">${levelNames[level]}</h3>
+                  <div class="row g-4">
+                    ${grouped[level].map(position => `
+                      ${position.members && position.members.length > 0 ? position.members.map(member => `
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                          <div class="card border-0 shadow-sm h-100 text-center hover-lift">
+                            <div class="card-body p-4">
+                              <div class="mb-3">
+                                ${member.photo ? `
+                                  <img src="${member.photo.url}" 
+                                       alt="${member.name}" 
+                                       class="rounded-circle shadow"
+                                       style="width: 120px; height: 120px; object-fit: cover;">
+                                ` : `
+                                  <div class="rounded-circle bg-secondary bg-opacity-10 mx-auto d-flex align-items-center justify-content-center" 
+                                       style="width: 120px; height: 120px;">
+                                    <i class="bi bi-person-fill text-secondary" style="font-size: 3rem;"></i>
+                                  </div>
+                                `}
+                              </div>
+                              <h5 class="fw-bold mb-1">${member.name}</h5>
+                              <p class="text-success mb-2 small">${position.title}</p>
+                              ${position.department ? `<p class="text-muted small mb-3">${position.department}</p>` : ''}
+                              ${member.email || member.phone ? `
+                                <div class="border-top pt-3 mt-3">
+                                  ${member.email ? `
+                                    <div class="d-flex align-items-center justify-content-center mb-2">
+                                      <i class="bi bi-envelope text-muted me-2 small"></i>
+                                      <small class="text-muted">${member.email}</small>
+                                    </div>
+                                  ` : ''}
+                                  ${member.phone ? `
+                                    <div class="d-flex align-items-center justify-content-center">
+                                      <i class="bi bi-phone text-muted me-2 small"></i>
+                                      <small class="text-muted">${member.phone}</small>
+                                    </div>
+                                  ` : ''}
+                                </div>
+                              ` : ''}
+                            </div>
+                          </div>
+                        </div>
+                      `).join('') : `
+                        <div class="col-12">
+                          <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Belum ada anggota untuk posisi ${position.title}
+                          </div>
+                        </div>
+                      `}
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('');
+          })()}
+        ` : `
+          <div class="text-center py-5">
+            <i class="bi bi-people text-muted" style="font-size: 5rem;"></i>
+            <h4 class="mt-3 text-muted">Belum ada struktur organisasi untuk periode ini</h4>
+          </div>
+        `}
+      </div>
+    </section>
+
+    <style>
+    .hover-lift {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+    }
+    </style>
+  `
+}) %>
