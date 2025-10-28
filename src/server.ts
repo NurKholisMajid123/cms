@@ -51,11 +51,17 @@ async function logActivity(action: string, userId: string, collection?: string, 
   }
 }
 
-// Load common data for all pages
+// Load common data for all pages (UPDATED: Added pages collection)
 async function loadCommonData() {
   return await Promise.all([
     payload.findGlobal({ slug: 'settings', depth: 2 }),
     payload.findGlobal({ slug: 'navigation', depth: 2 }),
+    payload.find({ 
+      collection: 'pages', 
+      where: { status: { equals: 'published' } },
+      sort: 'title',
+      depth: 1
+    }),
   ]);
 }
 
@@ -76,9 +82,15 @@ const start = async () => {
   // Homepage
   app.get('/', async (req, res) => {
     try {
-      const [settings, navigation, about, latestPosts, activePeriod, stats] = await Promise.all([
+      const [settings, navigation, pages, about, latestPosts, activePeriod, stats] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.findGlobal({ slug: 'about', depth: 2 }),
         payload.find({
           collection: 'posts',
@@ -103,6 +115,7 @@ const start = async () => {
         title: 'Beranda',
         settings,
         navigation,
+        pages: pages.docs,
         about,
         latestPosts: latestPosts.docs,
         activePeriod: activePeriod.docs[0] || null,
@@ -118,6 +131,7 @@ const start = async () => {
         error: 'Terjadi kesalahan saat memuat halaman',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -125,16 +139,23 @@ const start = async () => {
   // Tentang Kami
   app.get('/tentang', async (req, res) => {
     try {
-      const [settings, navigation, about] = await Promise.all([
+      const [settings, navigation, pages, about] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.findGlobal({ slug: 'about', depth: 2 }),
       ]);
 
       res.render('pages/about', {
-        title: 'Tentang Kami',
+        title: 'Tentang HMI',
         settings,
         navigation,
+        pages: pages.docs,
         about,
       });
     } catch (error) {
@@ -143,6 +164,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -151,9 +173,15 @@ const start = async () => {
   app.get('/struktur', async (req, res) => {
     try {
       const periodId = req.query.period ? String(req.query.period) : undefined;
-      const [settings, navigation, periods] = await Promise.all([
+      const [settings, navigation, pages, periods] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({ collection: 'periods', sort: '-startDate' }),
       ]);
 
@@ -196,6 +224,7 @@ const start = async () => {
         title: 'Struktur Organisasi',
         settings,
         navigation,
+        pages: pages.docs,
         periods: periods.docs,
         selectedPeriod: positions.docs[0]?.period || null,
         structure,
@@ -206,6 +235,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -217,9 +247,15 @@ const start = async () => {
       const page = parseInt(req.query.page as string) || 1;
       const limit = 12;
 
-      const [settings, navigation, posts] = await Promise.all([
+      const [settings, navigation, pages, posts] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'posts',
           where: {
@@ -237,6 +273,7 @@ const start = async () => {
         title: category ? `Berita - ${category}` : 'Berita & Kegiatan',
         settings,
         navigation,
+        pages: pages.docs,
         posts: posts.docs,
         pagination: {
           page: posts.page,
@@ -252,6 +289,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -259,9 +297,15 @@ const start = async () => {
   // Detail Berita
   app.get('/berita/:slug', async (req, res) => {
     try {
-      const [settings, navigation, post] = await Promise.all([
+      const [settings, navigation, pages, post] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'posts',
           where: {
@@ -279,6 +323,7 @@ const start = async () => {
           error: 'Berita tidak ditemukan',
           settings,
           navigation,
+          pages: pages.docs,
         });
       }
 
@@ -306,6 +351,7 @@ const start = async () => {
         title: post.docs[0].title,
         settings,
         navigation,
+        pages: pages.docs,
         post: post.docs[0],
         relatedPosts: relatedPosts.docs,
       });
@@ -315,6 +361,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -325,9 +372,15 @@ const start = async () => {
       const type = req.query.type as string;
       const page = parseInt(req.query.page as string) || 1;
 
-      const [settings, navigation, galleries] = await Promise.all([
+      const [settings, navigation, pages, galleries] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'galleries',
           where: type ? { type: { equals: type } } : {},
@@ -342,6 +395,7 @@ const start = async () => {
         title: 'Galeri',
         settings,
         navigation,
+        pages: pages.docs,
         galleries: galleries.docs,
         pagination: {
           page: galleries.page,
@@ -357,6 +411,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -364,9 +419,15 @@ const start = async () => {
   // Detail Galeri
   app.get('/galeri/:slug', async (req, res) => {
     try {
-      const [settings, navigation, gallery] = await Promise.all([
+      const [settings, navigation, pages, gallery] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'galleries',
           where: { slug: { equals: req.params.slug } },
@@ -381,6 +442,7 @@ const start = async () => {
           error: 'Galeri tidak ditemukan',
           settings,
           navigation,
+          pages: pages.docs,
         });
       }
 
@@ -388,6 +450,7 @@ const start = async () => {
         title: gallery.docs[0].title,
         settings,
         navigation,
+        pages: pages.docs,
         gallery: gallery.docs[0],
       });
     } catch (error) {
@@ -396,6 +459,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -404,9 +468,15 @@ const start = async () => {
   app.get('/dokumen', async (req, res) => {
     try {
       const category = req.query.category as string;
-      const [settings, navigation, documents] = await Promise.all([
+      const [settings, navigation, pages, documents] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'documents',
           where: {
@@ -423,6 +493,7 @@ const start = async () => {
         title: 'Dokumen',
         settings,
         navigation,
+        pages: pages.docs,
         documents: documents.docs,
         selectedCategory: category || null,
       });
@@ -432,6 +503,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -439,9 +511,15 @@ const start = async () => {
   // Halaman Statis (Pages) - FITUR BARU
   app.get('/halaman/:slug', async (req, res) => {
     try {
-      const [settings, navigation, page] = await Promise.all([
+      const [settings, navigation, pages, page] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         payload.find({
           collection: 'pages',
           where: {
@@ -459,6 +537,7 @@ const start = async () => {
           error: 'Halaman tidak ditemukan',
           settings,
           navigation,
+          pages: pages.docs,
         });
       }
 
@@ -466,6 +545,7 @@ const start = async () => {
         title: page.docs[0].title,
         settings,
         navigation,
+        pages: pages.docs,
         page: page.docs[0],
       });
     } catch (error) {
@@ -474,6 +554,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -481,15 +562,22 @@ const start = async () => {
   // Kontak
   app.get('/kontak', async (req, res) => {
     try {
-      const [settings, navigation] = await Promise.all([
+      const [settings, navigation, pages] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
       ]);
 
       res.render('pages/contact', {
         title: 'Kontak',
         settings,
         navigation,
+        pages: pages.docs,
         success: req.query.success === 'true',
       });
     } catch (error) {
@@ -498,6 +586,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -524,9 +613,15 @@ const start = async () => {
   app.get('/cari', async (req, res) => {
     try {
       const q = req.query.q as string;
-      const [settings, navigation, results] = await Promise.all([
+      const [settings, navigation, pages, results] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
         q
           ? payload.find({
               collection: 'posts',
@@ -552,6 +647,7 @@ const start = async () => {
         title: 'Pencarian',
         settings,
         navigation,
+        pages: pages.docs,
         query: q || '',
         results: results?.docs || [],
       });
@@ -561,6 +657,7 @@ const start = async () => {
         error: 'Terjadi kesalahan',
         settings: {},
         navigation: {},
+        pages: [],
       });
     }
   });
@@ -753,6 +850,22 @@ const start = async () => {
     }
   });
 
+  // API: Get published pages (NEW API ENDPOINT)
+  app.get('/api/pages', async (req, res) => {
+    try {
+      const pages = await payload.find({
+        collection: 'pages',
+        where: { status: { equals: 'published' } },
+        sort: 'title',
+        depth: 1,
+      });
+
+      res.json({ success: true, data: pages.docs });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Failed to fetch pages' });
+    }
+  });
+
   // API: Submit contact form
   app.post('/api/contact', async (req, res) => {
     try {
@@ -781,12 +894,22 @@ const start = async () => {
   // ============================================
   app.use(async (req, res) => {
     try {
-      const [settings, navigation] = await loadCommonData();
+      const [settings, navigation, pages] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({ 
+          collection: 'pages', 
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
+      ]);
       res.status(404).render('pages/error', {
         title: '404 - Halaman Tidak Ditemukan',
         error: 'Halaman yang Anda cari tidak ditemukan',
         settings,
         navigation,
+        pages: pages.docs,
       });
     } catch (error) {
       res.status(404).send('404 - Page Not Found');
@@ -823,6 +946,7 @@ const start = async () => {
     console.log('   - GET  /api/structure     Get structure');
     console.log('   - GET  /api/galleries     Get galleries');
     console.log('   - GET  /api/documents     Get documents');
+    console.log('   - GET  /api/pages         Get published pages');
     console.log('   - GET  /api/settings      Get settings');
     console.log('   - POST /api/contact       Submit contact');
     console.log('========================================\n');

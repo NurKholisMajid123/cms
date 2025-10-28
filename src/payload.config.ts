@@ -675,6 +675,9 @@ export default buildConfig({
       admin: {
         group: 'Media',
       },
+      access: {
+        read: () => true,
+      },
       fields: [
         {
           name: 'alt',
@@ -871,17 +874,17 @@ export default buildConfig({
           type: 'group',
           label: 'Tema & Warna',
           fields: [
-            { 
-              name: 'primaryColor', 
-              type: 'text', 
+            {
+              name: 'primaryColor',
+              type: 'text',
               label: 'Warna Utama',
               admin: {
                 description: 'Format: #RRGGBB',
               },
             },
-            { 
-              name: 'secondaryColor', 
-              type: 'text', 
+            {
+              name: 'secondaryColor',
+              type: 'text',
               label: 'Warna Sekunder',
             },
             {
