@@ -137,37 +137,76 @@ const start = async () => {
   });
 
   // Tentang Kami
-  app.get('/tentang', async (req, res) => {
-    try {
-      const [settings, navigation, pages, about] = await Promise.all([
-        payload.findGlobal({ slug: 'settings', depth: 2 }),
-        payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
-          where: { status: { equals: 'published' } },
-          sort: 'title',
-          depth: 1
-        }),
-        payload.findGlobal({ slug: 'about', depth: 2 }),
-      ]);
+app.get('/tentang', async (req, res) => {
+  try {
+    const [settings, navigation, pages, about] = await Promise.all([
+      payload.findGlobal({ slug: 'settings', depth: 2 }),
+      payload.findGlobal({ slug: 'navigation', depth: 2 }),
+      payload.find({ 
+        collection: 'pages', 
+        where: { status: { equals: 'published' } },
+        sort: 'title',
+        depth: 1
+      }),
+      payload.findGlobal({ slug: 'about', depth: 2 }),
+    ]);
 
-      res.render('pages/about', {
-        title: 'Tentang HMI',
-        settings,
-        navigation,
-        pages: pages.docs,
-        about,
-      });
-    } catch (error) {
-      res.status(500).render('pages/error', {
-        title: 'Error',
-        error: 'Terjadi kesalahan',
-        settings: {},
-        navigation: {},
-        pages: [],
-      });
-    }
-  });
+    // Helper function to convert Slate rich text to HTML
+    const slateToHtml = (nodes: any[]): string => {
+      if (!nodes || !Array.isArray(nodes)) return '';
+      
+      return nodes.map(node => {
+        if (node.text !== undefined) {
+          let text = node.text;
+          if (node.bold) text = `<strong>${text}</strong>`;
+          if (node.italic) text = `<em>${text}</em>`;
+          if (node.underline) text = `<u>${text}</u>`;
+          if (node.code) text = `<code>${text}</code>`;
+          return text;
+        }
+
+        const children = node.children ? slateToHtml(node.children) : '';
+
+        switch (node.type) {
+          case 'h1': return `<h1>${children}</h1>`;
+          case 'h2': return `<h2>${children}</h2>`;
+          case 'h3': return `<h3>${children}</h3>`;
+          case 'h4': return `<h4>${children}</h4>`;
+          case 'h5': return `<h5>${children}</h5>`;
+          case 'h6': return `<h6>${children}</h6>`;
+          case 'blockquote': return `<blockquote>${children}</blockquote>`;
+          case 'ul': return `<ul>${children}</ul>`;
+          case 'ol': return `<ol>${children}</ol>`;
+          case 'li': return `<li>${children}</li>`;
+          case 'link': return `<a href="${node.url}">${children}</a>`;
+          default: return `<p>${children}</p>`;
+        }
+      }).join('');
+    };
+
+    // Convert rich text history to HTML
+    const aboutData = {
+      ...about,
+      historyHtml: about.history ? slateToHtml(about.history as any[]) : '',
+    };
+
+    res.render('pages/about', {
+      title: 'Tentang HMI',
+      settings,
+      navigation,
+      pages: pages.docs,
+      about: aboutData,
+    });
+  } catch (error) {
+    res.status(500).render('pages/error', {
+      title: 'Error',
+      error: 'Terjadi kesalahan',
+      settings: {},
+      navigation: {},
+      pages: [],
+    });
+  }
+});
 
   // Struktur Organisasi
   app.get('/struktur', async (req, res) => {
@@ -295,76 +334,115 @@ const start = async () => {
   });
 
   // Detail Berita
-  app.get('/berita/:slug', async (req, res) => {
-    try {
-      const [settings, navigation, pages, post] = await Promise.all([
-        payload.findGlobal({ slug: 'settings', depth: 2 }),
-        payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
-          where: { status: { equals: 'published' } },
-          sort: 'title',
-          depth: 1
-        }),
-        payload.find({
-          collection: 'posts',
-          where: {
-            slug: { equals: req.params.slug },
-            status: { equals: 'published' },
-          },
-          limit: 1,
-          depth: 2,
-        }),
-      ]);
-
-      if (post.docs.length === 0) {
-        return res.status(404).render('pages/error', {
-          title: '404',
-          error: 'Berita tidak ditemukan',
-          settings,
-          navigation,
-          pages: pages.docs,
-        });
-      }
-
-      // Increment views
-      await payload.update({
-        collection: 'posts',
-        id: post.docs[0].id,
-        data: { views: ((post.docs[0].views as number) || 0) + 1 },
-      });
-
-      // Get related posts
-      const relatedPosts = await payload.find({
+app.get('/berita/:slug', async (req, res) => {
+  try {
+    const [settings, navigation, pages, post] = await Promise.all([
+      payload.findGlobal({ slug: 'settings', depth: 2 }),
+      payload.findGlobal({ slug: 'navigation', depth: 2 }),
+      payload.find({ 
+        collection: 'pages', 
+        where: { status: { equals: 'published' } },
+        sort: 'title',
+        depth: 1
+      }),
+      payload.find({
         collection: 'posts',
         where: {
+          slug: { equals: req.params.slug },
           status: { equals: 'published' },
-          category: { equals: post.docs[0].category },
-          id: { not_equals: post.docs[0].id },
         },
-        limit: 3,
-        sort: '-publishedDate',
+        limit: 1,
         depth: 2,
-      });
+      }),
+    ]);
 
-      res.render('pages/post-detail', {
-        title: post.docs[0].title,
+    if (post.docs.length === 0) {
+      return res.status(404).render('pages/error', {
+        title: '404',
+        error: 'Berita tidak ditemukan',
         settings,
         navigation,
         pages: pages.docs,
-        post: post.docs[0],
-        relatedPosts: relatedPosts.docs,
-      });
-    } catch (error) {
-      res.status(500).render('pages/error', {
-        title: 'Error',
-        error: 'Terjadi kesalahan',
-        settings: {},
-        navigation: {},
-        pages: [],
       });
     }
-  });
+
+    // Helper function to convert Slate rich text to HTML
+    const slateToHtml = (nodes: any[]): string => {
+      if (!nodes || !Array.isArray(nodes)) return '';
+      
+      return nodes.map(node => {
+        if (node.text !== undefined) {
+          let text = node.text;
+          if (node.bold) text = `<strong>${text}</strong>`;
+          if (node.italic) text = `<em>${text}</em>`;
+          if (node.underline) text = `<u>${text}</u>`;
+          if (node.code) text = `<code>${text}</code>`;
+          return text;
+        }
+
+        const children = node.children ? slateToHtml(node.children) : '';
+
+        switch (node.type) {
+          case 'h1': return `<h1>${children}</h1>`;
+          case 'h2': return `<h2>${children}</h2>`;
+          case 'h3': return `<h3>${children}</h3>`;
+          case 'h4': return `<h4>${children}</h4>`;
+          case 'h5': return `<h5>${children}</h5>`;
+          case 'h6': return `<h6>${children}</h6>`;
+          case 'blockquote': return `<blockquote>${children}</blockquote>`;
+          case 'ul': return `<ul>${children}</ul>`;
+          case 'ol': return `<ol>${children}</ol>`;
+          case 'li': return `<li>${children}</li>`;
+          case 'link': return `<a href="${node.url}">${children}</a>`;
+          default: return `<p>${children}</p>`;
+        }
+      }).join('');
+    };
+
+    // Increment views
+    await payload.update({
+      collection: 'posts',
+      id: post.docs[0].id,
+      data: { views: ((post.docs[0].views as number) || 0) + 1 },
+    });
+
+    // Convert rich text content to HTML
+    const postData = {
+      ...post.docs[0],
+      contentHtml: slateToHtml(post.docs[0].content as any[]),
+    };
+
+    // Get related posts
+    const relatedPosts = await payload.find({
+      collection: 'posts',
+      where: {
+        status: { equals: 'published' },
+        category: { equals: post.docs[0].category },
+        id: { not_equals: post.docs[0].id },
+      },
+      limit: 3,
+      sort: '-publishedDate',
+      depth: 2,
+    });
+
+    res.render('pages/post-detail', {
+      title: post.docs[0].title,
+      settings,
+      navigation,
+      pages: pages.docs,
+      post: postData,
+      relatedPosts: relatedPosts.docs,
+    });
+  } catch (error) {
+    res.status(500).render('pages/error', {
+      title: 'Error',
+      error: 'Terjadi kesalahan',
+      settings: {},
+      navigation: {},
+      pages: [],
+    });
+  }
+});
 
   // Galeri
   app.get('/galeri', async (req, res) => {
@@ -541,12 +619,51 @@ const start = async () => {
         });
       }
 
+      // Helper function to convert Slate rich text to HTML
+      const slateToHtml = (nodes: any[]): string => {
+        if (!nodes || !Array.isArray(nodes)) return '';
+        
+        return nodes.map(node => {
+          if (node.text !== undefined) {
+            let text = node.text;
+            if (node.bold) text = `<strong>${text}</strong>`;
+            if (node.italic) text = `<em>${text}</em>`;
+            if (node.underline) text = `<u>${text}</u>`;
+            if (node.code) text = `<code>${text}</code>`;
+            return text;
+          }
+
+          const children = node.children ? slateToHtml(node.children) : '';
+
+          switch (node.type) {
+            case 'h1': return `<h1>${children}</h1>`;
+            case 'h2': return `<h2>${children}</h2>`;
+            case 'h3': return `<h3>${children}</h3>`;
+            case 'h4': return `<h4>${children}</h4>`;
+            case 'h5': return `<h5>${children}</h5>`;
+            case 'h6': return `<h6>${children}</h6>`;
+            case 'blockquote': return `<blockquote>${children}</blockquote>`;
+            case 'ul': return `<ul>${children}</ul>`;
+            case 'ol': return `<ol>${children}</ol>`;
+            case 'li': return `<li>${children}</li>`;
+            case 'link': return `<a href="${node.url}">${children}</a>`;
+            default: return `<p>${children}</p>`;
+          }
+        }).join('');
+      };
+
+      // Convert rich text content to HTML
+      const pageData = {
+        ...page.docs[0],
+        contentHtml: slateToHtml(page.docs[0].content as any[]),
+      };
+
       res.render('pages/page-detail', {
         title: page.docs[0].title,
         settings,
         navigation,
         pages: pages.docs,
-        page: page.docs[0],
+        page: pageData,
       });
     } catch (error) {
       res.status(500).render('pages/error', {
@@ -756,7 +873,6 @@ const start = async () => {
         });
         periodId = activePeriod.docs[0]?.id;
       }
-
       const [positions, members] = await Promise.all([
         payload.find({
           collection: 'positions',
