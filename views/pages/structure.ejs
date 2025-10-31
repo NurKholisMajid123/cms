@@ -41,91 +41,203 @@
       </div>
     </section>
 
-    <!-- Organization Structure -->
+    <!-- Organization Chart -->
     <section class="py-5">
-      <div class="container">
+      <div class="container-fluid px-4">
         ${structure && structure.length > 0 ? `
-          <!-- Group by Level -->
-          ${(() => {
-            const grouped = {};
-            structure.forEach(pos => {
-              if (!grouped[pos.level]) grouped[pos.level] = [];
-              grouped[pos.level].push(pos);
-            });
-            
-            const levelOrder = ['pelindung', 'penasehat', 'ketua', 'wakil_ketua', 'sekretaris', 'bendahara', 'koordinator', 'anggota'];
-            const levelNames = {
-              'pelindung': 'Pelindung',
-              'penasehat': 'Penasehat',
-              'ketua': 'Ketua',
-              'wakil_ketua': 'Wakil Ketua',
-              'sekretaris': 'Sekretaris',
-              'bendahara': 'Bendahara',
-              'koordinator': 'Koordinator Bidang',
-              'anggota': 'Anggota Bidang'
-            };
-            
-            return levelOrder.map(level => {
-              if (!grouped[level] || grouped[level].length === 0) return '';
+          <div class="org-chart-wrapper">
+            ${(() => {
+              const grouped = {};
+              structure.forEach(pos => {
+                if (!grouped[pos.level]) grouped[pos.level] = [];
+                grouped[pos.level].push(pos);
+              });
               
-              return `
-                <div class="mb-5">
-                  <h3 class="fw-bold text-success mb-4 pb-2 border-bottom">${levelNames[level]}</h3>
-                  <div class="row g-4">
-                    ${grouped[level].map(position => `
-                      ${position.members && position.members.length > 0 ? position.members.map(member => `
-                        <div class="col-lg-3 col-md-4 col-sm-6">
-                          <div class="card border-0 shadow-sm h-100 text-center hover-lift">
-                            <div class="card-body p-4">
-                              <div class="mb-3">
-                                ${member.photo ? `
-                                  <img src="${member.photo.url}" 
-                                       alt="${member.name}" 
-                                       class="rounded-circle shadow"
-                                       style="width: 120px; height: 120px; object-fit: cover;">
-                                ` : `
-                                  <div class="rounded-circle bg-secondary bg-opacity-10 mx-auto d-flex align-items-center justify-content-center" 
-                                       style="width: 120px; height: 120px;">
-                                    <i class="bi bi-person-fill text-secondary" style="font-size: 3rem;"></i>
-                                  </div>
-                                `}
+              const levelOrder = ['pelindung', 'penasehat', 'ketua', 'wakil_ketua', 'sekretaris', 'bendahara', 'koordinator', 'anggota'];
+              
+              let html = '<div class="org-chart">';
+              
+              // Level 1: Pelindung & Penasehat (Top Level - Side by Side)
+              const topLevels = ['pelindung', 'penasehat'].filter(l => grouped[l]);
+              if (topLevels.length > 0) {
+                html += '<div class="org-tier org-tier-top">';
+                topLevels.forEach(level => {
+                  if (grouped[level]) {
+                    html += '<div class="org-group">';
+                    grouped[level].forEach(position => {
+                      position.members?.forEach(member => {
+                        html += `
+                          <div class="org-box org-box-advisor">
+                            ${member.photo ? `
+                              <img src="${member.photo.url}" alt="${member.name}" class="org-avatar">
+                            ` : `
+                              <div class="org-avatar-placeholder">
+                                <i class="bi bi-person-fill"></i>
                               </div>
-                              <h5 class="fw-bold mb-1">${member.name}</h5>
-                              <p class="text-success mb-2 small">${position.title}</p>
-                              ${position.department ? `<p class="text-muted small mb-3">${position.department}</p>` : ''}
-                              ${member.email || member.phone ? `
-                                <div class="border-top pt-3 mt-3">
-                                  ${member.email ? `
-                                    <div class="d-flex align-items-center justify-content-center mb-2">
-                                      <i class="bi bi-envelope text-muted me-2 small"></i>
-                                      <small class="text-muted">${member.email}</small>
-                                    </div>
-                                  ` : ''}
-                                  ${member.phone ? `
-                                    <div class="d-flex align-items-center justify-content-center">
-                                      <i class="bi bi-phone text-muted me-2 small"></i>
-                                      <small class="text-muted">${member.phone}</small>
-                                    </div>
-                                  ` : ''}
-                                </div>
-                              ` : ''}
+                            `}
+                            <div class="org-content">
+                              <div class="org-name">${member.name}</div>
+                              <div class="org-role">${position.title}</div>
+                              ${position.department ? `<div class="org-dept">${position.department}</div>` : ''}
                             </div>
                           </div>
-                        </div>
-                      `).join('') : `
-                        <div class="col-12">
-                          <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Belum ada anggota untuk posisi ${position.title}
+                        `;
+                      });
+                    });
+                    html += '</div>';
+                  }
+                });
+                html += '<div class="org-line-v"></div></div>';
+              }
+              
+              // Level 2: Ketua (Central)
+              if (grouped['ketua']) {
+                html += '<div class="org-tier org-tier-leader">';
+                html += '<div class="org-group org-group-center">';
+                grouped['ketua'].forEach(position => {
+                  position.members?.forEach(member => {
+                    html += `
+                      <div class="org-box org-box-leader">
+                        ${member.photo ? `
+                          <img src="${member.photo.url}" alt="${member.name}" class="org-avatar org-avatar-large">
+                        ` : `
+                          <div class="org-avatar-placeholder org-avatar-large">
+                            <i class="bi bi-person-fill"></i>
                           </div>
+                        `}
+                        <div class="org-content">
+                          <div class="org-name">${member.name}</div>
+                          <div class="org-role">${position.title}</div>
                         </div>
-                      `}
-                    `).join('')}
-                  </div>
-                </div>
-              `;
-            }).join('');
-          })()}
+                      </div>
+                    `;
+                  });
+                });
+                html += '</div>';
+                html += '<div class="org-line-v"></div></div>';
+              }
+              
+              // Level 3: Wakil Ketua (Can be multiple)
+              if (grouped['wakil_ketua']) {
+                html += '<div class="org-tier">';
+                html += '<div class="org-group org-group-flex">';
+                grouped['wakil_ketua'].forEach(position => {
+                  position.members?.forEach(member => {
+                    html += `
+                      <div class="org-box org-box-vice">
+                        ${member.photo ? `
+                          <img src="${member.photo.url}" alt="${member.name}" class="org-avatar">
+                        ` : `
+                          <div class="org-avatar-placeholder">
+                            <i class="bi bi-person-fill"></i>
+                          </div>
+                        `}
+                        <div class="org-content">
+                          <div class="org-name">${member.name}</div>
+                          <div class="org-role">${position.title}</div>
+                        </div>
+                      </div>
+                    `;
+                  });
+                });
+                html += '</div>';
+                html += '<div class="org-line-v"></div></div>';
+              }
+              
+              // Level 4: Sekretaris & Bendahara (Side by Side)
+              const staffLevels = ['sekretaris', 'bendahara'].filter(l => grouped[l]);
+              if (staffLevels.length > 0) {
+                html += '<div class="org-tier">';
+                html += '<div class="org-group org-group-flex">';
+                staffLevels.forEach(level => {
+                  if (grouped[level]) {
+                    grouped[level].forEach(position => {
+                      position.members?.forEach(member => {
+                        html += `
+                          <div class="org-box org-box-staff">
+                            ${member.photo ? `
+                              <img src="${member.photo.url}" alt="${member.name}" class="org-avatar">
+                            ` : `
+                              <div class="org-avatar-placeholder">
+                                <i class="bi bi-person-fill"></i>
+                              </div>
+                            `}
+                            <div class="org-content">
+                              <div class="org-name">${member.name}</div>
+                              <div class="org-role">${position.title}</div>
+                            </div>
+                          </div>
+                        `;
+                      });
+                    });
+                  }
+                });
+                html += '</div>';
+                html += '<div class="org-line-v"></div></div>';
+              }
+              
+              // Level 5: Koordinator Bidang
+              if (grouped['koordinator']) {
+                html += '<div class="org-tier">';
+                html += '<div class="org-group org-group-flex">';
+                grouped['koordinator'].forEach(position => {
+                  position.members?.forEach(member => {
+                    html += `
+                      <div class="org-box org-box-coordinator">
+                        ${member.photo ? `
+                          <img src="${member.photo.url}" alt="${member.name}" class="org-avatar">
+                        ` : `
+                          <div class="org-avatar-placeholder">
+                            <i class="bi bi-person-fill"></i>
+                          </div>
+                        `}
+                        <div class="org-content">
+                          <div class="org-name">${member.name}</div>
+                          <div class="org-role">${position.title}</div>
+                          ${position.department ? `<div class="org-dept">${position.department}</div>` : ''}
+                        </div>
+                      </div>
+                    `;
+                  });
+                });
+                html += '</div>';
+                if (grouped['anggota']) {
+                  html += '<div class="org-line-v"></div>';
+                }
+                html += '</div>';
+              }
+              
+              // Level 6: Anggota Bidang
+              if (grouped['anggota']) {
+                html += '<div class="org-tier org-tier-members">';
+                html += '<div class="org-group org-group-flex">';
+                grouped['anggota'].forEach(position => {
+                  position.members?.forEach(member => {
+                    html += `
+                      <div class="org-box org-box-member">
+                        ${member.photo ? `
+                          <img src="${member.photo.url}" alt="${member.name}" class="org-avatar org-avatar-small">
+                        ` : `
+                          <div class="org-avatar-placeholder org-avatar-small">
+                            <i class="bi bi-person-fill"></i>
+                          </div>
+                        `}
+                        <div class="org-content">
+                          <div class="org-name">${member.name}</div>
+                          <div class="org-role">${position.title}</div>
+                          ${position.department ? `<div class="org-dept">${position.department}</div>` : ''}
+                        </div>
+                      </div>
+                    `;
+                  });
+                });
+                html += '</div></div>';
+              }
+              
+              html += '</div>';
+              return html;
+            })()}
+          </div>
         ` : `
           <div class="text-center py-5">
             <i class="bi bi-people text-muted" style="font-size: 5rem;"></i>
@@ -136,12 +248,540 @@
     </section>
 
     <style>
-    .hover-lift {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    .org-chart-wrapper {
+      overflow-x: auto;
+      padding: 20px 0;
     }
-    .hover-lift:hover {
+
+    .org-chart {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 800px;
+      padding: 20px;
+    }
+
+    .org-tier {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .org-tier-top {
+      margin-bottom: 30px;
+    }
+
+    .org-tier-leader {
+      margin: 30px 0;
+    }
+
+    .org-tier-members {
+      margin-top: 20px;
+    }
+
+    .org-group {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+      max-width: 100%;
+    }
+
+    .org-group-center {
+      justify-content: center;
+    }
+
+    .org-group-flex {
+      gap: 30px;
+    }
+
+    .org-box {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      min-width: 200px;
+      max-width: 220px;
+      transition: all 0.3s ease;
+      border: 2px solid #e9ecef;
+      position: relative;
+    }
+
+    .org-box:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .org-box-advisor {
+      border-color: #6c757d;
+      background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    }
+
+    .org-box-leader {
+      border-color: #198754;
+      background: linear-gradient(135deg, #d4edda 0%, #fff 100%);
+      border-width: 3px;
+      min-width: 240px;
+      box-shadow: 0 6px 20px rgba(25, 135, 84, 0.3);
+    }
+
+    .org-box-vice {
+      border-color: #0d6efd;
+    }
+
+    .org-box-staff {
+      border-color: #198754;
+    }
+
+    .org-box-coordinator {
+      border-color: #198754;
+    }
+
+    .org-box-member {
+      border-color: #6c757d;
+      min-width: 180px;
+      max-width: 200px;
+      padding: 15px;
+    }
+
+    .org-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #198754;
+      margin-bottom: 12px;
+    }
+
+    .org-avatar-large {
+      width: 110px;
+      height: 110px;
+      border-width: 4px;
+    }
+
+    .org-avatar-small {
+      width: 70px;
+      height: 70px;
+    }
+
+    .org-avatar-placeholder {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: #e9ecef;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid #dee2e6;
+      margin-bottom: 12px;
+    }
+
+    .org-avatar-placeholder.org-avatar-large {
+      width: 110px;
+      height: 110px;
+    }
+
+    .org-avatar-placeholder.org-avatar-small {
+      width: 70px;
+      height: 70px;
+    }
+
+    .org-avatar-placeholder i {
+      font-size: 2.5rem;
+      color: #6c757d;
+    }
+
+    .org-avatar-large + .org-content .org-avatar-placeholder i,
+    .org-avatar-placeholder.org-avatar-large i {
+      font-size: 3rem;
+    }
+
+    .org-avatar-small + .org-content .org-avatar-placeholder i,
+    .org-avatar-placeholder.org-avatar-small i {
+      font-size: 2rem;
+    }
+
+    .org-content {
+      width: 100%;
+    }
+
+    .org-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #212529;
+      margin-bottom: 4px;
+    }
+
+    .org-role {
+      font-size: 0.85rem;
+      color: #198754;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .org-dept {
+      font-size: 0.75rem;
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    .org-line-v {
+      width: 2px;
+      height: 30px;
+      background: #198754;
+      margin: 10px 0;
+    }
+
+    /* Horizontal line connector for same level */
+    .org-group::before {
+      content: '';
+      position: absolute;
+      top: -20px;
+      left: 25%;
+      right: 25%;
+      height: 2px;
+      background: #198754;
+      display: none;
+    }
+
+    .org-tier:not(.org-tier-top):not(.org-tier-leader) .org-group::before {
+      display: block;
+    }
+
+    @media (max-width: 1200px) {
+      .org-group {
+        gap: 25px;
+      }
+
+      .org-box {
+        min-width: 180px;
+        max-width: 200px;
+      }
+    }
+
+    @media (max-width: 992px) {
+      .org-chart {
+        min-width: auto;
+        padding: 15px;
+      }
+
+      .org-group {
+        gap: 20px;
+      }
+
+      .org-group-flex {
+        gap: 15px;
+      }
+
+      .org-box {
+        min-width: 160px;
+        max-width: 180px;
+        padding: 15px;
+      }
+
+      .org-box-leader {
+        min-width: 180px;
+      }
+
+      .org-box-member {
+        min-width: 150px;
+        max-width: 170px;
+      }
+
+      .org-avatar {
+        width: 75px;
+        height: 75px;
+      }
+
+      .org-avatar-large {
+        width: 95px;
+        height: 95px;
+      }
+
+      .org-avatar-small {
+        width: 65px;
+        height: 65px;
+      }
+
+      .org-avatar-placeholder i {
+        font-size: 2rem;
+      }
+
+      .org-avatar-placeholder.org-avatar-large i {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .org-chart {
+        min-width: auto;
+        padding: 10px;
+      }
+
+      .org-tier {
+        margin-bottom: 15px;
+      }
+
+      .org-group {
+        gap: 15px;
+      }
+
+      .org-group-flex {
+        gap: 12px;
+      }
+
+      .org-box {
+        min-width: 145px;
+        max-width: 165px;
+        padding: 12px;
+      }
+
+      .org-box-leader {
+        min-width: 165px;
+      }
+
+      .org-box-member {
+        min-width: 135px;
+        max-width: 155px;
+        padding: 10px;
+      }
+
+      .org-avatar {
+        width: 65px;
+        height: 65px;
+        border-width: 2px;
+      }
+
+      .org-avatar-large {
+        width: 80px;
+        height: 80px;
+        border-width: 3px;
+      }
+
+      .org-avatar-small {
+        width: 55px;
+        height: 55px;
+      }
+
+      .org-avatar-placeholder {
+        width: 65px;
+        height: 65px;
+        border-width: 2px;
+      }
+
+      .org-avatar-placeholder.org-avatar-large {
+        width: 80px;
+        height: 80px;
+      }
+
+      .org-avatar-placeholder.org-avatar-small {
+        width: 55px;
+        height: 55px;
+      }
+
+      .org-avatar-placeholder i {
+        font-size: 1.8rem;
+      }
+
+      .org-avatar-placeholder.org-avatar-large i {
+        font-size: 2.2rem;
+      }
+
+      .org-avatar-placeholder.org-avatar-small i {
+        font-size: 1.5rem;
+      }
+
+      .org-name {
+        font-size: 0.85rem;
+      }
+
+      .org-role {
+        font-size: 0.75rem;
+      }
+
+      .org-dept {
+        font-size: 0.7rem;
+      }
+
+      .org-line-v {
+        height: 20px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .org-chart-wrapper {
+        padding: 10px 0;
+      }
+
+      .org-chart {
+        padding: 5px;
+      }
+
+      .org-tier {
+        margin-bottom: 12px;
+      }
+
+      .org-tier-top {
+        margin-bottom: 20px;
+      }
+
+      .org-tier-leader {
+        margin: 20px 0;
+      }
+
+      .org-group {
+        gap: 12px;
+      }
+
+      .org-group-flex {
+        gap: 10px;
+      }
+
+      .org-box {
+        min-width: 130px;
+        max-width: 150px;
+        padding: 10px;
+      }
+
+      .org-box-leader {
+        min-width: 150px;
+        border-width: 2px;
+      }
+
+      .org-box-member {
+        min-width: 120px;
+        max-width: 140px;
+        padding: 8px;
+      }
+
+      .org-avatar {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+      }
+
+      .org-avatar-large {
+        width: 75px;
+        height: 75px;
+      }
+
+      .org-avatar-small {
+        width: 50px;
+        height: 50px;
+      }
+
+      .org-avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 8px;
+      }
+
+      .org-avatar-placeholder.org-avatar-large {
+        width: 75px;
+        height: 75px;
+      }
+
+      .org-avatar-placeholder.org-avatar-small {
+        width: 50px;
+        height: 50px;
+      }
+
+      .org-avatar-placeholder i {
+        font-size: 1.5rem;
+      }
+
+      .org-avatar-placeholder.org-avatar-large i {
+        font-size: 2rem;
+      }
+
+      .org-avatar-placeholder.org-avatar-small i {
+        font-size: 1.2rem;
+      }
+
+      .org-name {
+        font-size: 0.8rem;
+        margin-bottom: 3px;
+      }
+
+      .org-role {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+      }
+
+      .org-dept {
+        font-size: 0.65rem;
+      }
+
+      .org-line-v {
+        height: 15px;
+        margin: 5px 0;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .org-box {
+        min-width: 110px;
+        max-width: 130px;
+        padding: 8px;
+      }
+
+      .org-box-leader {
+        min-width: 130px;
+      }
+
+      .org-box-member {
+        min-width: 105px;
+        max-width: 125px;
+      }
+
+      .org-avatar {
+        width: 50px;
+        height: 50px;
+      }
+
+      .org-avatar-large {
+        width: 65px;
+        height: 65px;
+      }
+
+      .org-avatar-small {
+        width: 45px;
+        height: 45px;
+      }
+
+      .org-avatar-placeholder {
+        width: 50px;
+        height: 50px;
+      }
+
+      .org-avatar-placeholder.org-avatar-large {
+        width: 65px;
+        height: 65px;
+      }
+
+      .org-avatar-placeholder.org-avatar-small {
+        width: 45px;
+        height: 45px;
+      }
+
+      .org-name {
+        font-size: 0.75rem;
+      }
+
+      .org-role {
+        font-size: 0.65rem;
+      }
+
+      .org-dept {
+        font-size: 0.6rem;
+      }
     }
     </style>
   `

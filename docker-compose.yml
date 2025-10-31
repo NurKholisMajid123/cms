@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cms-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=kingM
+      - POSTGRES_DB=hmi_cms
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cms-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cms:
+    build: .
+    container_name: cms-organisasi
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URI=postgresql://postgres:kingM@postgres:5432/hmi_cms
+      - PAYLOAD_SECRET=your-secret-key-change-this-in-production
+      - PAYLOAD_PUBLIC_SERVER_URL=https://hmiwh.site
+      - PORT=3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - cms-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  cms-network:
+    driver: bridge

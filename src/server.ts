@@ -726,7 +726,6 @@ app.get('/berita/:slug', async (req, res) => {
     }
   });
 
-  // Search
   app.get('/cari', async (req, res) => {
     try {
       const q = req.query.q as string;
@@ -767,6 +766,7 @@ app.get('/berita/:slug', async (req, res) => {
         pages: pages.docs,
         query: q || '',
         results: results?.docs || [],
+        success: false, // Tambahkan ini
       });
     } catch (error) {
       res.status(500).render('pages/error', {
