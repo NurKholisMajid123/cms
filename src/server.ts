@@ -56,8 +56,8 @@ async function loadCommonData() {
   return await Promise.all([
     payload.findGlobal({ slug: 'settings', depth: 2 }),
     payload.findGlobal({ slug: 'navigation', depth: 2 }),
-    payload.find({ 
-      collection: 'pages', 
+    payload.find({
+      collection: 'pages',
       where: { status: { equals: 'published' } },
       sort: 'title',
       depth: 1
@@ -85,8 +85,8 @@ const start = async () => {
       const [settings, navigation, pages, about, latestPosts, activePeriod, stats] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -137,76 +137,76 @@ const start = async () => {
   });
 
   // Tentang Kami
-app.get('/tentang', async (req, res) => {
-  try {
-    const [settings, navigation, pages, about] = await Promise.all([
-      payload.findGlobal({ slug: 'settings', depth: 2 }),
-      payload.findGlobal({ slug: 'navigation', depth: 2 }),
-      payload.find({ 
-        collection: 'pages', 
-        where: { status: { equals: 'published' } },
-        sort: 'title',
-        depth: 1
-      }),
-      payload.findGlobal({ slug: 'about', depth: 2 }),
-    ]);
+  app.get('/tentang', async (req, res) => {
+    try {
+      const [settings, navigation, pages, about] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'pages',
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
+        payload.findGlobal({ slug: 'about', depth: 2 }),
+      ]);
 
-    // Helper function to convert Slate rich text to HTML
-    const slateToHtml = (nodes: any[]): string => {
-      if (!nodes || !Array.isArray(nodes)) return '';
-      
-      return nodes.map(node => {
-        if (node.text !== undefined) {
-          let text = node.text;
-          if (node.bold) text = `<strong>${text}</strong>`;
-          if (node.italic) text = `<em>${text}</em>`;
-          if (node.underline) text = `<u>${text}</u>`;
-          if (node.code) text = `<code>${text}</code>`;
-          return text;
-        }
+      // Helper function to convert Slate rich text to HTML
+      const slateToHtml = (nodes: any[]): string => {
+        if (!nodes || !Array.isArray(nodes)) return '';
 
-        const children = node.children ? slateToHtml(node.children) : '';
+        return nodes.map(node => {
+          if (node.text !== undefined) {
+            let text = node.text;
+            if (node.bold) text = `<strong>${text}</strong>`;
+            if (node.italic) text = `<em>${text}</em>`;
+            if (node.underline) text = `<u>${text}</u>`;
+            if (node.code) text = `<code>${text}</code>`;
+            return text;
+          }
 
-        switch (node.type) {
-          case 'h1': return `<h1>${children}</h1>`;
-          case 'h2': return `<h2>${children}</h2>`;
-          case 'h3': return `<h3>${children}</h3>`;
-          case 'h4': return `<h4>${children}</h4>`;
-          case 'h5': return `<h5>${children}</h5>`;
-          case 'h6': return `<h6>${children}</h6>`;
-          case 'blockquote': return `<blockquote>${children}</blockquote>`;
-          case 'ul': return `<ul>${children}</ul>`;
-          case 'ol': return `<ol>${children}</ol>`;
-          case 'li': return `<li>${children}</li>`;
-          case 'link': return `<a href="${node.url}">${children}</a>`;
-          default: return `<p>${children}</p>`;
-        }
-      }).join('');
-    };
+          const children = node.children ? slateToHtml(node.children) : '';
 
-    // Convert rich text history to HTML
-    const aboutData = {
-      ...about,
-      historyHtml: about.history ? slateToHtml(about.history as any[]) : '',
-    };
+          switch (node.type) {
+            case 'h1': return `<h1>${children}</h1>`;
+            case 'h2': return `<h2>${children}</h2>`;
+            case 'h3': return `<h3>${children}</h3>`;
+            case 'h4': return `<h4>${children}</h4>`;
+            case 'h5': return `<h5>${children}</h5>`;
+            case 'h6': return `<h6>${children}</h6>`;
+            case 'blockquote': return `<blockquote>${children}</blockquote>`;
+            case 'ul': return `<ul>${children}</ul>`;
+            case 'ol': return `<ol>${children}</ol>`;
+            case 'li': return `<li>${children}</li>`;
+            case 'link': return `<a href="${node.url}">${children}</a>`;
+            default: return `<p>${children}</p>`;
+          }
+        }).join('');
+      };
 
-    res.render('pages/about', {
-      title: 'Tentang HMI',
-      settings,
-      navigation,
-      pages: pages.docs,
-      about: aboutData,
-    });
-  } catch (error) {
-    res.status(500).render('pages/error', {
-      title: 'Error',
-      error: 'Terjadi kesalahan',
-      settings: {},
-      navigation: {},
-      pages: [],
-    });
-  }
-});
+      // Convert rich text history to HTML
+      const aboutData = {
+        ...about,
+        historyHtml: about.history ? slateToHtml(about.history as any[]) : '',
+      };
+
+      res.render('pages/about', {
+        title: 'Tentang HMI',
+        settings,
+        navigation,
+        pages: pages.docs,
+        about: aboutData,
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+        pages: [],
+      });
+    }
+  });
 
   // Struktur Organisasi
   app.get('/struktur', async (req, res) => {
@@ -215,8 +215,8 @@ app.get('/tentang', async (req, res) => {
       const [settings, navigation, pages, periods] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -289,8 +289,8 @@ app.get('/tentang', async (req, res) => {
       const [settings, navigation, pages, posts] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -334,115 +334,115 @@ app.get('/tentang', async (req, res) => {
   });
 
   // Detail Berita
-app.get('/berita/:slug', async (req, res) => {
-  try {
-    const [settings, navigation, pages, post] = await Promise.all([
-      payload.findGlobal({ slug: 'settings', depth: 2 }),
-      payload.findGlobal({ slug: 'navigation', depth: 2 }),
-      payload.find({ 
-        collection: 'pages', 
-        where: { status: { equals: 'published' } },
-        sort: 'title',
-        depth: 1
-      }),
-      payload.find({
+  app.get('/berita/:slug', async (req, res) => {
+    try {
+      const [settings, navigation, pages, post] = await Promise.all([
+        payload.findGlobal({ slug: 'settings', depth: 2 }),
+        payload.findGlobal({ slug: 'navigation', depth: 2 }),
+        payload.find({
+          collection: 'pages',
+          where: { status: { equals: 'published' } },
+          sort: 'title',
+          depth: 1
+        }),
+        payload.find({
+          collection: 'posts',
+          where: {
+            slug: { equals: req.params.slug },
+            status: { equals: 'published' },
+          },
+          limit: 1,
+          depth: 2,
+        }),
+      ]);
+
+      if (post.docs.length === 0) {
+        return res.status(404).render('pages/error', {
+          title: '404',
+          error: 'Berita tidak ditemukan',
+          settings,
+          navigation,
+          pages: pages.docs,
+        });
+      }
+
+      // Helper function to convert Slate rich text to HTML
+      const slateToHtml = (nodes: any[]): string => {
+        if (!nodes || !Array.isArray(nodes)) return '';
+
+        return nodes.map(node => {
+          if (node.text !== undefined) {
+            let text = node.text;
+            if (node.bold) text = `<strong>${text}</strong>`;
+            if (node.italic) text = `<em>${text}</em>`;
+            if (node.underline) text = `<u>${text}</u>`;
+            if (node.code) text = `<code>${text}</code>`;
+            return text;
+          }
+
+          const children = node.children ? slateToHtml(node.children) : '';
+
+          switch (node.type) {
+            case 'h1': return `<h1>${children}</h1>`;
+            case 'h2': return `<h2>${children}</h2>`;
+            case 'h3': return `<h3>${children}</h3>`;
+            case 'h4': return `<h4>${children}</h4>`;
+            case 'h5': return `<h5>${children}</h5>`;
+            case 'h6': return `<h6>${children}</h6>`;
+            case 'blockquote': return `<blockquote>${children}</blockquote>`;
+            case 'ul': return `<ul>${children}</ul>`;
+            case 'ol': return `<ol>${children}</ol>`;
+            case 'li': return `<li>${children}</li>`;
+            case 'link': return `<a href="${node.url}">${children}</a>`;
+            default: return `<p>${children}</p>`;
+          }
+        }).join('');
+      };
+
+      // Increment views
+      await payload.update({
+        collection: 'posts',
+        id: post.docs[0].id,
+        data: { views: ((post.docs[0].views as number) || 0) + 1 },
+      });
+
+      // Convert rich text content to HTML
+      const postData = {
+        ...post.docs[0],
+        contentHtml: slateToHtml(post.docs[0].content as any[]),
+      };
+
+      // Get related posts
+      const relatedPosts = await payload.find({
         collection: 'posts',
         where: {
-          slug: { equals: req.params.slug },
           status: { equals: 'published' },
+          category: { equals: post.docs[0].category },
+          id: { not_equals: post.docs[0].id },
         },
-        limit: 1,
+        limit: 3,
+        sort: '-publishedDate',
         depth: 2,
-      }),
-    ]);
+      });
 
-    if (post.docs.length === 0) {
-      return res.status(404).render('pages/error', {
-        title: '404',
-        error: 'Berita tidak ditemukan',
+      res.render('pages/post-detail', {
+        title: post.docs[0].title,
         settings,
         navigation,
         pages: pages.docs,
+        post: postData,
+        relatedPosts: relatedPosts.docs,
+      });
+    } catch (error) {
+      res.status(500).render('pages/error', {
+        title: 'Error',
+        error: 'Terjadi kesalahan',
+        settings: {},
+        navigation: {},
+        pages: [],
       });
     }
-
-    // Helper function to convert Slate rich text to HTML
-    const slateToHtml = (nodes: any[]): string => {
-      if (!nodes || !Array.isArray(nodes)) return '';
-      
-      return nodes.map(node => {
-        if (node.text !== undefined) {
-          let text = node.text;
-          if (node.bold) text = `<strong>${text}</strong>`;
-          if (node.italic) text = `<em>${text}</em>`;
-          if (node.underline) text = `<u>${text}</u>`;
-          if (node.code) text = `<code>${text}</code>`;
-          return text;
-        }
-
-        const children = node.children ? slateToHtml(node.children) : '';
-
-        switch (node.type) {
-          case 'h1': return `<h1>${children}</h1>`;
-          case 'h2': return `<h2>${children}</h2>`;
-          case 'h3': return `<h3>${children}</h3>`;
-          case 'h4': return `<h4>${children}</h4>`;
-          case 'h5': return `<h5>${children}</h5>`;
-          case 'h6': return `<h6>${children}</h6>`;
-          case 'blockquote': return `<blockquote>${children}</blockquote>`;
-          case 'ul': return `<ul>${children}</ul>`;
-          case 'ol': return `<ol>${children}</ol>`;
-          case 'li': return `<li>${children}</li>`;
-          case 'link': return `<a href="${node.url}">${children}</a>`;
-          default: return `<p>${children}</p>`;
-        }
-      }).join('');
-    };
-
-    // Increment views
-    await payload.update({
-      collection: 'posts',
-      id: post.docs[0].id,
-      data: { views: ((post.docs[0].views as number) || 0) + 1 },
-    });
-
-    // Convert rich text content to HTML
-    const postData = {
-      ...post.docs[0],
-      contentHtml: slateToHtml(post.docs[0].content as any[]),
-    };
-
-    // Get related posts
-    const relatedPosts = await payload.find({
-      collection: 'posts',
-      where: {
-        status: { equals: 'published' },
-        category: { equals: post.docs[0].category },
-        id: { not_equals: post.docs[0].id },
-      },
-      limit: 3,
-      sort: '-publishedDate',
-      depth: 2,
-    });
-
-    res.render('pages/post-detail', {
-      title: post.docs[0].title,
-      settings,
-      navigation,
-      pages: pages.docs,
-      post: postData,
-      relatedPosts: relatedPosts.docs,
-    });
-  } catch (error) {
-    res.status(500).render('pages/error', {
-      title: 'Error',
-      error: 'Terjadi kesalahan',
-      settings: {},
-      navigation: {},
-      pages: [],
-    });
-  }
-});
+  });
 
   // Galeri
   app.get('/galeri', async (req, res) => {
@@ -453,8 +453,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages, galleries] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -500,8 +500,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages, gallery] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -549,8 +549,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages, documents] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -592,8 +592,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages, page] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -622,7 +622,7 @@ app.get('/berita/:slug', async (req, res) => {
       // Helper function to convert Slate rich text to HTML
       const slateToHtml = (nodes: any[]): string => {
         if (!nodes || !Array.isArray(nodes)) return '';
-        
+
         return nodes.map(node => {
           if (node.text !== undefined) {
             let text = node.text;
@@ -682,8 +682,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
@@ -732,30 +732,30 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages, results] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
         }),
         q
           ? payload.find({
-              collection: 'posts',
-              where: {
-                and: [
-                  { status: { equals: 'published' } },
-                  {
-                    or: [
-                      { title: { contains: q } },
-                      { excerpt: { contains: q } },
-                    ],
-                  },
-                ],
-              },
-              limit: 20,
-              sort: '-publishedDate',
-              depth: 2,
-            })
+            collection: 'posts',
+            where: {
+              and: [
+                { status: { equals: 'published' } },
+                {
+                  or: [
+                    { title: { contains: q } },
+                    { excerpt: { contains: q } },
+                  ],
+                },
+              ],
+            },
+            limit: 20,
+            sort: '-publishedDate',
+            depth: 2,
+          })
           : null,
       ]);
 
@@ -864,15 +864,16 @@ app.get('/berita/:slug', async (req, res) => {
     try {
       const { period } = req.query;
 
-      let periodId = period as string;
+      let periodId: string | undefined = period as string;
       if (!periodId) {
         const activePeriod = await payload.find({
           collection: 'periods',
           where: { isActive: { equals: true } },
           limit: 1,
         });
-        periodId = activePeriod.docs[0]?.id;
+        periodId = activePeriod.docs[0]?.id ? String(activePeriod.docs[0].id) : undefined; // ✅ Convert ke string
       }
+
       const [positions, members] = await Promise.all([
         payload.find({
           collection: 'positions',
@@ -988,9 +989,9 @@ app.get('/berita/:slug', async (req, res) => {
       const { name, email, subject, message } = req.body;
 
       if (!name || !email || !message) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Name, email, and message are required' 
+        return res.status(400).json({
+          success: false,
+          error: 'Name, email, and message are required'
         });
       }
 
@@ -1013,8 +1014,8 @@ app.get('/berita/:slug', async (req, res) => {
       const [settings, navigation, pages] = await Promise.all([
         payload.findGlobal({ slug: 'settings', depth: 2 }),
         payload.findGlobal({ slug: 'navigation', depth: 2 }),
-        payload.find({ 
-          collection: 'pages', 
+        payload.find({
+          collection: 'pages',
           where: { status: { equals: 'published' } },
           sort: 'title',
           depth: 1
